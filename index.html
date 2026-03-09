@@ -2975,13 +2975,21 @@ async function renderForCurrentState() {
 }
 
 async function logout() {
-  if (!window.supabase) return;
-  await window.supabase.auth.signOut();
+  if (window.supabase && window.supabase.auth) {
+    try {
+      await window.supabase.auth.signOut();
+    } catch (e) {
+      // keep local logout flow even when remote signout fails
+      console.warn('signOut error:', e);
+    }
+  }
   authState.user = null;
   authState.session = null;
   db = { movements: [] };
   syncQueue = [];
   showAuthUI();
+  setAuthMode('login');
+  showToast('Sesion cerrada');
 }
 
 window.logout = logout;
@@ -3040,6 +3048,11 @@ window.bootstrapSupabase = async function bootstrapSupabase(client) {
   window.supabase = client;
   document.getElementById('login-form').addEventListener('submit', onLoginSubmit);
   document.getElementById('register-form').addEventListener('submit', onRegisterSubmit);
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn && !logoutBtn.dataset.bound) {
+    logoutBtn.addEventListener('click', logout);
+    logoutBtn.dataset.bound = '1';
+  }
   setAuthMode('login');
   showAuthUI();
 
