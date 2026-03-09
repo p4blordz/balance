@@ -133,16 +133,69 @@ Deno.serve(async (req) => {
     }));
 
     let duplicated = 0;
+    let insertedCount = 0;
+    let reactivatedCount = 0;
     if (rows.length > 0) {
-      const { data: upserted, error: upsertError } = await admin
+      const providerTxIds = [...new Set(rows.map((r) => r.provider_tx_id))];
+      const { data: existingRows, error: existingError } = await admin
         .from("wallet_transactions")
-        .upsert(rows, {
-          onConflict: "user_id,provider,provider_tx_id",
-          ignoreDuplicates: true,
-        })
-        .select("id");
-      if (upsertError) throw upsertError;
-      duplicated = Math.max(0, rows.length - ((upserted || []).length));
+        .select("id,provider_tx_id,review_status")
+        .eq("user_id", user.id)
+        .eq("provider", "mercadopago")
+        .in("provider_tx_id", providerTxIds);
+      if (existingError) throw existingError;
+
+      const existingByProviderTx = new Map(
+        (existingRows || []).map((row) => [String(row.provider_tx_id), row]),
+      );
+      const toInsert: typeof rows = [];
+      const toReactivate: Array<{ id: string; row: typeof rows[number] }> = [];
+
+      for (const row of rows) {
+        const existing = existingByProviderTx.get(String(row.provider_tx_id));
+        if (!existing) {
+          toInsert.push(row);
+          continue;
+        }
+        const status = String(existing.review_status || "").toLowerCase();
+        if (status === "skipped") {
+          toReactivate.push({ id: String(existing.id), row });
+          continue;
+        }
+      }
+
+      if (toInsert.length > 0) {
+        const { data: insertedRows, error: insertError } = await admin
+          .from("wallet_transactions")
+          .insert(toInsert)
+          .select("id");
+        if (insertError) throw insertError;
+        insertedCount = (insertedRows || []).length;
+      }
+
+      if (toReactivate.length > 0) {
+        for (const item of toReactivate) {
+          const { error: reactivateError } = await admin
+            .from("wallet_transactions")
+            .update({
+              connection_id: item.row.connection_id,
+              occurred_at: item.row.occurred_at,
+              description: item.row.description,
+              amount: item.row.amount,
+              currency: item.row.currency,
+              raw_payload: item.row.raw_payload,
+              suggested_cat: item.row.suggested_cat,
+              selected_cat: null,
+              review_status: "pending",
+            })
+            .eq("id", item.id)
+            .eq("user_id", user.id);
+          if (reactivateError) throw reactivateError;
+          reactivatedCount += 1;
+        }
+      }
+
+      duplicated = Math.max(0, rows.length - insertedCount - reactivatedCount);
     }
 
     const { count: pendingCount } = await admin
@@ -168,6 +221,7 @@ Deno.serve(async (req) => {
       fetched: rows.length,
       pending: pendingCount || 0,
       duplicated,
+      reactivated: reactivatedCount,
     });
   } catch (e) {
     if (runContext.userId) {

@@ -964,6 +964,11 @@ html, body {
   align-items: baseline;
   gap: 8px;
 }
+.wallet-review-top-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 .wallet-review-desc {
   font-size: 0.78rem;
   font-weight: 600;
@@ -973,6 +978,24 @@ html, body {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.74rem;
   color: var(--red);
+}
+.wallet-review-remove {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: #10121a;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.wallet-review-remove:hover {
+  color: var(--red);
+  border-color: rgba(255,87,87,0.5);
 }
 .wallet-review-meta {
   margin-top: 2px;
@@ -3130,7 +3153,14 @@ function renderWalletScreen() {
         <div class="wallet-review-item">
           <div class="wallet-review-top">
             <div class="wallet-review-desc">${safeDesc}</div>
-            <div class="wallet-review-amt">-${fmt(Math.abs(Number(tx.amount) || 0))}</div>
+            <div class="wallet-review-top-right">
+              <button
+                type="button"
+                class="wallet-review-remove"
+                title="Eliminar de pendientes"
+                onclick="deleteWalletPendingItem('${tx.id}')">×</button>
+              <div class="wallet-review-amt">-${fmt(Math.abs(Number(tx.amount) || 0))}</div>
+            </div>
           </div>
           <div class="wallet-review-meta">${formatWalletDate(tx.occurred_at)} · Sugerida: ${tx.suggested_cat || '-'}</div>
           <input
@@ -3190,6 +3220,24 @@ function setWalletItemCategory(txId, category) {
 function setWalletItemTitle(txId, title) {
   if (!walletReviewDraft[txId]) return;
   walletReviewDraft[txId].title = String(title || '');
+}
+
+async function deleteWalletPendingItem(txId) {
+  if (!requireAuthOrShowScreen()) return;
+  if (!window.supabase || !txId) return;
+  try {
+    const { error } = await window.supabase
+      .from('wallet_transactions')
+      .delete()
+      .eq('id', txId);
+    if (error) throw error;
+    delete walletReviewDraft[txId];
+    walletState.pending = walletState.pending.filter(tx => tx.id !== txId);
+    renderWalletScreen();
+    setWalletSyncStatus('Gasto eliminado de pendientes', 'ok');
+  } catch (e) {
+    showToast(e.message || 'No se pudo eliminar el gasto');
+  }
 }
 
 function approveAllWalletPending() {
@@ -3309,7 +3357,8 @@ async function syncWalletNow() {
     const fetched = data && Number.isFinite(data.fetched) ? data.fetched : 0;
     const pending = data && Number.isFinite(data.pending) ? data.pending : 0;
     const duplicated = data && Number.isFinite(data.duplicated) ? data.duplicated : 0;
-    setWalletSyncStatus(`Se encontraron ${fetched} gastos | pendientes ${pending} | duplicados ${duplicated}`, 'ok');
+    const reactivated = data && Number.isFinite(data.reactivated) ? data.reactivated : 0;
+    setWalletSyncStatus(`Se encontraron ${fetched} gastos | pendientes ${pending} | reactivados ${reactivated} | duplicados ${duplicated}`, 'ok');
     await refreshWalletData();
   } catch (e) {
     console.error('wallet sync error:', e);
