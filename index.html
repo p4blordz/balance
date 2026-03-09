@@ -888,6 +888,158 @@ html, body {
   flex-shrink: 0;
 }
 
+.wallet-shell {
+  padding: 0 20px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wallet-card {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--glass), rgba(255,255,255,0) 42%), var(--card);
+  padding: 12px;
+  box-shadow: var(--shadow-soft);
+}
+.wallet-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.wallet-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.wallet-note {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.wallet-pill {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.66rem;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.wallet-pill.connected {
+  border-color: rgba(79,255,176,0.5);
+  background: rgba(79,255,176,0.08);
+  color: var(--green);
+}
+.wallet-pill.disconnected {
+  border-color: rgba(255,87,87,0.4);
+  background: rgba(255,87,87,0.08);
+  color: var(--red);
+}
+.wallet-actions {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.wallet-date-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.wallet-inline-actions {
+  margin: 8px 0 10px;
+}
+.wallet-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wallet-review-item {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.015);
+  padding: 8px;
+}
+.wallet-review-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.wallet-review-desc {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.wallet-review-amt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  color: var(--red);
+}
+.wallet-review-meta {
+  margin-top: 2px;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.wallet-review-controls {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 8px;
+}
+.wallet-review-controls select {
+  width: 100%;
+  background: #10121a;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 8px 9px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+}
+.wallet-pending-count {
+  min-width: 28px;
+  height: 22px;
+  border-radius: 999px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--accent);
+  background: rgba(232,255,71,0.1);
+  border: 1px solid rgba(232,255,71,0.3);
+}
+.wallet-empty {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed rgba(255,255,255,0.12);
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.wallet-run-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.wallet-run-item {
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.015);
+  padding: 8px;
+}
+.wallet-run-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+}
+.wallet-run-ok { color: var(--green); }
+.wallet-run-error { color: var(--red); }
+
 .hidden { display: none !important; }
 
 .auth-gate {
@@ -1148,6 +1300,64 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     <div id="histList"></div>
   </div>
 
+  <!-- ══════════ SCREEN: CONFIG / BILLETERAS ══════════ -->
+  <div class="screen" id="screen-wallet">
+    <div class="screen-header">
+      <div class="screen-title">Configuracion</div>
+      <div class="screen-sub">Conexiones y sincronizacion</div>
+    </div>
+    <div class="wallet-shell">
+      <div class="wallet-card">
+        <div class="wallet-title-row">
+          <div class="wallet-title">Mercado Pago</div>
+          <div id="walletConnectionState" class="wallet-pill disconnected">Sin conectar</div>
+        </div>
+        <div class="wallet-note">Conecta tu cuenta para traer egresos y revisarlos antes de importarlos.</div>
+        <div class="wallet-actions">
+          <button id="walletConnectBtn" class="btn-alt" type="button" onclick="startWalletConnect()">Conectar Mercado Pago</button>
+          <button id="walletDisconnectBtn" class="btn-alt" type="button" onclick="disconnectWallet()">Desconectar</button>
+        </div>
+      </div>
+
+      <div class="wallet-card">
+        <div class="wallet-title-row">
+          <div class="wallet-title">Sincronizar gastos</div>
+        </div>
+        <div class="wallet-date-grid">
+          <div class="field">
+            <label>Desde</label>
+            <input id="walletFromDate" type="date">
+          </div>
+          <div class="field">
+            <label>Hasta</label>
+            <input id="walletToDate" type="date">
+          </div>
+        </div>
+        <button id="walletSyncBtn" class="btn-submit" type="button" onclick="syncWalletNow()">Sincronizar ahora</button>
+        <div id="walletSyncStatus" class="import-status info"></div>
+      </div>
+
+      <div class="wallet-card">
+        <div class="wallet-title-row">
+          <div class="wallet-title">Revisar gastos pendientes</div>
+          <div id="walletPendingCount" class="wallet-pending-count">0</div>
+        </div>
+        <div class="wallet-inline-actions">
+          <button class="btn-alt" type="button" onclick="approveAllWalletPending()">Aprobar visibles</button>
+        </div>
+        <div id="walletReviewList" class="wallet-review-list"></div>
+        <button id="walletCommitBtn" class="btn-submit" type="button" onclick="commitWalletReview()">Confirmar seleccionados</button>
+      </div>
+
+      <div class="wallet-card">
+        <div class="wallet-title-row">
+          <div class="wallet-title">Ultimas sincronizaciones</div>
+        </div>
+        <div id="walletRunsList" class="wallet-run-list"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- â•â•â•â•â•â•â•â•â•â• BOTTOM NAV â•â•â•â•â•â•â•â•â•â• -->
   <nav class="bottom-nav">
     <button class="nav-btn active" onclick="showScreen('home')" id="nav-home">
@@ -1161,6 +1371,10 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     <button class="nav-btn" onclick="showScreen('hist')" id="nav-hist">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M2 12h20"/><path d="M12 2a10 10 0 0 1 0 20A10 10 0 0 1 12 2"/></svg>
       Historial
+    </button>
+    <button class="nav-btn" onclick="showScreen('wallet')" id="nav-wallet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7a2 2 0 0 1 2-2h14a1 1 0 0 1 1 1v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M17 13h3"/><circle cx="15" cy="13" r="1"/></svg>
+      Config
     </button>
   </nav>
 
@@ -1294,6 +1508,18 @@ let selectedType = 'gasto';
 let selectedCat = 'varios';
 let activeMonth = null; // {mes, anio}
 let importInProgress = false;
+const WALLET_PROVIDER_MP = 'mercadopago';
+let walletState = {
+  loading: false,
+  syncing: false,
+  committing: false,
+  integrationReady: true,
+  activeConnection: null,
+  connections: [],
+  pending: [],
+  runs: [],
+};
+let walletReviewDraft = {};
 
 const IMPORT_TYPE_MAP = {
   gasto: 'gasto',
@@ -1325,6 +1551,34 @@ const IMPORT_CAT_MAP = (() => {
   return map;
 })();
 
+function isoDateOnly(d) {
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
+
+function getDefaultWalletRange() {
+  const now = new Date();
+  const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  return { from: isoDateOnly(from), to: isoDateOnly(now) };
+}
+
+function suggestWalletCategory(description) {
+  const token = normalizeImportToken(description || '');
+  if (!token) return 'varios';
+  if (token.includes('nafta') || token.includes('uber') || token.includes('taxi') || token.includes('peaje') || token.includes('colectivo') || token.includes('sube')) return 'moto';
+  if (token.includes('super') || token.includes('mercado') || token.includes('kiosco') || token.includes('carniceria') || token.includes('verduleria') || token.includes('almacen') || token.includes('panaderia')) return 'alimentos';
+  if (token.includes('impuesto') || token.includes('afip') || token.includes('luz') || token.includes('agua') || token.includes('internet') || token.includes('gas')) return 'impuestos';
+  if (token.includes('alquiler') || token.includes('expensa') || token.includes('hogar') || token.includes('ferreteria')) return 'casa';
+  if (token.includes('cine') || token.includes('bar') || token.includes('resto') || token.includes('salida') || token.includes('entrada')) return 'salidas';
+  return 'varios';
+}
+
+function formatWalletDate(value) {
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return '-';
+  return dt.toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // INIT
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1345,6 +1599,12 @@ function init() {
     saveBtn.addEventListener('click', saveMovement);
     saveBtn.dataset.bound = '1';
   }
+  const walletRange = getDefaultWalletRange();
+  const fromInput = document.getElementById('walletFromDate');
+  const toInput = document.getElementById('walletToDate');
+  if (fromInput && !fromInput.value) fromInput.value = walletRange.from;
+  if (toInput && !toInput.value) toInput.value = walletRange.to;
+  renderWalletScreen();
   setupMonthBarInteractions();
 }
 
@@ -1402,6 +1662,10 @@ function showScreen(s) {
   document.getElementById('screen-' + s).classList.add('active');
   document.getElementById('nav-' + s).classList.add('active');
   if (s === 'hist') renderHistScreen();
+  if (s === 'wallet') {
+    renderWalletScreen();
+    refreshWalletData();
+  }
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2724,6 +2988,327 @@ async function deleteActivePeriod() {
   }
 }
 
+async function refreshWalletData() {
+  const user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return;
+  walletState.loading = true;
+  try {
+    const { data: connections, error: connError } = await window.supabase
+      .from('wallet_connections')
+      .select('id,provider,provider_account_id,status,token_expires_at,created_at,updated_at')
+      .eq('provider', WALLET_PROVIDER_MP)
+      .order('updated_at', { ascending: false });
+    if (connError) throw connError;
+
+    walletState.connections = connections || [];
+    walletState.activeConnection = walletState.connections.find(c => c.status === 'connected') || walletState.connections[0] || null;
+
+    walletState.pending = [];
+    walletState.runs = [];
+    walletReviewDraft = {};
+
+    if (walletState.activeConnection) {
+      const { data: pendingRows, error: pendingError } = await window.supabase
+        .from('wallet_transactions')
+        .select('id,description,amount,currency,occurred_at,suggested_cat,selected_cat,review_status,connection_id')
+        .eq('connection_id', walletState.activeConnection.id)
+        .in('review_status', ['pending', 'approved'])
+        .order('occurred_at', { ascending: false })
+        .limit(200);
+      if (pendingError) throw pendingError;
+      walletState.pending = pendingRows || [];
+
+      walletState.pending.forEach(tx => {
+        walletReviewDraft[tx.id] = {
+          action: 'approve',
+          category: tx.selected_cat || tx.suggested_cat || suggestWalletCategory(tx.description),
+        };
+      });
+
+      const { data: runsRows, error: runsError } = await window.supabase
+        .from('wallet_sync_runs')
+        .select('id,provider,date_from,date_to,fetched_count,pending_count,duplicated_count,status,error_message,created_at')
+        .eq('connection_id', walletState.activeConnection.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (runsError) throw runsError;
+      walletState.runs = runsRows || [];
+    }
+
+    walletState.integrationReady = true;
+  } catch (e) {
+    walletState.integrationReady = false;
+    console.warn('wallet data unavailable:', e);
+  } finally {
+    walletState.loading = false;
+    renderWalletScreen();
+  }
+}
+
+function renderWalletScreen() {
+  const stateEl = document.getElementById('walletConnectionState');
+  const connectBtn = document.getElementById('walletConnectBtn');
+  const disconnectBtn = document.getElementById('walletDisconnectBtn');
+  const syncBtn = document.getElementById('walletSyncBtn');
+  const commitBtn = document.getElementById('walletCommitBtn');
+  const syncStatus = document.getElementById('walletSyncStatus');
+  const pendingCount = document.getElementById('walletPendingCount');
+  const reviewList = document.getElementById('walletReviewList');
+  const runsList = document.getElementById('walletRunsList');
+  if (!stateEl || !connectBtn || !disconnectBtn || !syncBtn || !commitBtn || !syncStatus || !pendingCount || !reviewList || !runsList) return;
+
+  if (!walletState.integrationReady) {
+    stateEl.textContent = 'No disponible';
+    stateEl.className = 'wallet-pill disconnected';
+    connectBtn.disabled = true;
+    disconnectBtn.disabled = true;
+    syncBtn.disabled = true;
+    commitBtn.disabled = true;
+    syncStatus.textContent = 'Integra las tablas/funciones de billetera en Supabase para habilitar esta pantalla.';
+    syncStatus.className = 'import-status error';
+    reviewList.innerHTML = `<div class="wallet-empty">Integracion no disponible en este entorno.</div>`;
+    runsList.innerHTML = `<div class="wallet-empty">Sin datos.</div>`;
+    pendingCount.textContent = '0';
+    return;
+  }
+
+  const isConnected = !!(walletState.activeConnection && walletState.activeConnection.status === 'connected');
+  stateEl.textContent = isConnected ? 'Conectada' : 'Sin conectar';
+  stateEl.className = `wallet-pill ${isConnected ? 'connected' : 'disconnected'}`;
+  connectBtn.disabled = walletState.syncing || walletState.committing;
+  disconnectBtn.disabled = !isConnected || walletState.syncing || walletState.committing;
+  syncBtn.disabled = !isConnected || walletState.syncing || walletState.committing;
+  commitBtn.disabled = walletState.pending.length === 0 || walletState.committing;
+  pendingCount.textContent = String(walletState.pending.length);
+
+  if (!walletState.syncing && !walletState.committing && !syncStatus.textContent) {
+    syncStatus.textContent = isConnected ? 'Listo para sincronizar.' : 'Conecta una cuenta para sincronizar.';
+    syncStatus.className = 'import-status info';
+  }
+
+  if (walletState.pending.length === 0) {
+    reviewList.innerHTML = `<div class="wallet-empty">No hay gastos pendientes para revisar.</div>`;
+  } else {
+    reviewList.innerHTML = walletState.pending.map(tx => {
+      const draft = walletReviewDraft[tx.id] || { action: 'approve', category: tx.selected_cat || tx.suggested_cat || 'varios' };
+      const catOptions = CATS.map(c => `<option value="${c.id}" ${draft.category === c.id ? 'selected' : ''}>${c.icon} ${c.label}</option>`).join('');
+      return `
+        <div class="wallet-review-item">
+          <div class="wallet-review-top">
+            <div class="wallet-review-desc">${tx.description || 'Gasto Mercado Pago'}</div>
+            <div class="wallet-review-amt">-${fmt(Math.abs(Number(tx.amount) || 0))}</div>
+          </div>
+          <div class="wallet-review-meta">${formatWalletDate(tx.occurred_at)} · Sugerida: ${tx.suggested_cat || '-'}</div>
+          <div class="wallet-review-controls">
+            <select onchange="setWalletItemAction('${tx.id}', this.value)">
+              <option value="approve" ${draft.action === 'approve' ? 'selected' : ''}>Aprobar</option>
+              <option value="skip" ${draft.action === 'skip' ? 'selected' : ''}>Omitir</option>
+            </select>
+            <select onchange="setWalletItemCategory('${tx.id}', this.value)" ${draft.action === 'skip' ? 'disabled' : ''}>
+              ${catOptions}
+            </select>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (walletState.runs.length === 0) {
+    runsList.innerHTML = `<div class="wallet-empty">Todavia no hay sincronizaciones registradas.</div>`;
+  } else {
+    runsList.innerHTML = walletState.runs.map(r => {
+      const cls = r.status === 'ok' ? 'wallet-run-ok' : 'wallet-run-error';
+      const status = r.status === 'ok' ? 'OK' : 'Error';
+      return `
+        <div class="wallet-run-item">
+          <div class="wallet-run-row">
+            <div>${formatWalletDate(r.created_at)}</div>
+            <div class="${cls}">${status}</div>
+          </div>
+          <div class="wallet-run-row" style="margin-top:4px">
+            <div>${r.date_from || '-'} a ${r.date_to || '-'}</div>
+            <div>f:${r.fetched_count || 0} p:${r.pending_count || 0} d:${r.duplicated_count || 0}</div>
+          </div>
+          ${r.error_message ? `<div class="wallet-run-row" style="margin-top:4px;color:var(--red)">${String(r.error_message).slice(0, 140)}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function setWalletItemAction(txId, action) {
+  if (!walletReviewDraft[txId]) return;
+  walletReviewDraft[txId].action = action;
+  renderWalletScreen();
+}
+
+function setWalletItemCategory(txId, category) {
+  if (!walletReviewDraft[txId]) return;
+  walletReviewDraft[txId].category = category;
+}
+
+function approveAllWalletPending() {
+  walletState.pending.forEach(tx => {
+    if (!walletReviewDraft[tx.id]) {
+      walletReviewDraft[tx.id] = { action: 'approve', category: tx.selected_cat || tx.suggested_cat || 'varios' };
+    } else {
+      walletReviewDraft[tx.id].action = 'approve';
+    }
+  });
+  renderWalletScreen();
+}
+
+function readWalletDateRangeFromUI() {
+  const fromEl = document.getElementById('walletFromDate');
+  const toEl = document.getElementById('walletToDate');
+  const defaults = getDefaultWalletRange();
+  const date_from = fromEl && fromEl.value ? fromEl.value : defaults.from;
+  const date_to = toEl && toEl.value ? toEl.value : defaults.to;
+  return { date_from, date_to };
+}
+
+function setWalletSyncStatus(message, kind) {
+  const el = document.getElementById('walletSyncStatus');
+  if (!el) return;
+  el.textContent = message || '';
+  el.className = `import-status ${kind || 'info'}`;
+}
+
+async function startWalletConnect() {
+  if (!requireAuthOrShowScreen()) return;
+  if (!window.supabase) return;
+  if (!walletState.integrationReady) {
+    showToast('Integracion de billetera no disponible');
+    return;
+  }
+  try {
+    setWalletSyncStatus('Preparando conexion...', 'info');
+    const { data, error } = await window.supabase.functions.invoke('wallet-connect-start', {
+      body: {
+        provider: WALLET_PROVIDER_MP,
+        redirect_to: window.location.origin + window.location.pathname,
+      }
+    });
+    if (error) throw error;
+    if (!data || !data.redirect_url) throw new Error('No se obtuvo URL de autorizacion');
+    window.location.href = data.redirect_url;
+  } catch (e) {
+    console.error('wallet connect error:', e);
+    setWalletSyncStatus(e.message || 'No se pudo iniciar la conexion', 'error');
+  }
+}
+
+async function disconnectWallet() {
+  if (!requireAuthOrShowScreen()) return;
+  if (!walletState.activeConnection || !window.supabase) return;
+  if (!confirm('Desconectar Mercado Pago para esta cuenta?')) return;
+  try {
+    const { error } = await window.supabase
+      .from('wallet_connections')
+      .update({ status: 'disconnected' })
+      .eq('id', walletState.activeConnection.id);
+    if (error) throw error;
+    showToast('Conexion desvinculada');
+    await refreshWalletData();
+  } catch (e) {
+    showToast(e.message || 'No se pudo desconectar');
+  }
+}
+
+async function syncWalletNow() {
+  if (!requireAuthOrShowScreen()) return;
+  if (!walletState.activeConnection || walletState.activeConnection.status !== 'connected') {
+    showToast('Conecta Mercado Pago primero');
+    return;
+  }
+  if (!window.supabase) return;
+  const { date_from, date_to } = readWalletDateRangeFromUI();
+  if (!date_from || !date_to || date_from > date_to) {
+    setWalletSyncStatus('Rango de fechas invalido', 'error');
+    return;
+  }
+
+  walletState.syncing = true;
+  renderWalletScreen();
+  try {
+    setWalletSyncStatus('Sincronizando movimientos...', 'info');
+    const { data, error } = await window.supabase.functions.invoke('wallet-sync', {
+      body: {
+        connection_id: walletState.activeConnection.id,
+        date_from,
+        date_to,
+      }
+    });
+    if (error) throw error;
+    const fetched = data && Number.isFinite(data.fetched) ? data.fetched : 0;
+    const pending = data && Number.isFinite(data.pending) ? data.pending : 0;
+    const duplicated = data && Number.isFinite(data.duplicated) ? data.duplicated : 0;
+    setWalletSyncStatus(`Se encontraron ${fetched} gastos | pendientes ${pending} | duplicados ${duplicated}`, 'ok');
+    await refreshWalletData();
+  } catch (e) {
+    console.error('wallet sync error:', e);
+    setWalletSyncStatus(e.message || 'No se pudo sincronizar', 'error');
+  } finally {
+    walletState.syncing = false;
+    renderWalletScreen();
+  }
+}
+
+async function commitWalletReview() {
+  if (!requireAuthOrShowScreen()) return;
+  if (!window.supabase) return;
+  if (walletState.pending.length === 0) {
+    showToast('No hay pendientes');
+    return;
+  }
+  const items = walletState.pending.map(tx => {
+    const draft = walletReviewDraft[tx.id] || {};
+    return {
+      wallet_tx_id: tx.id,
+      category_id: draft.category || tx.selected_cat || tx.suggested_cat || 'varios',
+      action: draft.action === 'skip' ? 'skip' : 'approve',
+    };
+  });
+  if (items.length === 0) return;
+
+  walletState.committing = true;
+  renderWalletScreen();
+  try {
+    setWalletSyncStatus('Aplicando revision...', 'info');
+    const { data, error } = await window.supabase.functions.invoke('wallet-review-commit', { body: { items } });
+    if (error) throw error;
+    const imported = data && Number.isFinite(data.imported) ? data.imported : 0;
+    const skipped = data && Number.isFinite(data.skipped) ? data.skipped : 0;
+    setWalletSyncStatus(`Importados ${imported} | omitidos ${skipped}`, 'ok');
+    await refreshWalletData();
+    await fetchMovementsRemote();
+    renderAll();
+    renderHistScreen();
+  } catch (e) {
+    console.error('wallet commit error:', e);
+    setWalletSyncStatus(e.message || 'No se pudo aplicar la revision', 'error');
+  } finally {
+    walletState.committing = false;
+    renderWalletScreen();
+  }
+}
+
+function handleWalletCallbackFlags() {
+  const url = new URL(window.location.href);
+  const status = url.searchParams.get('wallet_status');
+  const message = url.searchParams.get('wallet_message');
+  if (!status && !message) return;
+  if (status === 'connected') {
+    showToast('Mercado Pago conectado');
+  } else if (status === 'error') {
+    showToast(message || 'No se pudo conectar Mercado Pago');
+  }
+  url.searchParams.delete('wallet_status');
+  url.searchParams.delete('wallet_message');
+  url.searchParams.delete('wallet_provider');
+  window.history.replaceState({}, '', url.toString());
+}
+
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // UTILS
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2958,6 +3543,7 @@ async function renderForCurrentState() {
     showAuthUI();
     return;
   }
+  handleWalletCallbackFlags();
   showAppUI();
   if (!appInitialized) {
     init();
@@ -2972,10 +3558,12 @@ async function renderForCurrentState() {
     await fetchMovementsRemote();
     await flushQueue();
     await fetchMovementsRemote();
+    await refreshWalletData();
     renderAll();
     renderHistScreen();
   } catch (e) {
     showToast('Modo offline: usando cache local');
+    await refreshWalletData();
   }
 }
 
@@ -3076,6 +3664,7 @@ window.bootstrapSupabase = async function bootstrapSupabase(client) {
     try {
       await flushQueue();
       await fetchMovementsRemote();
+      await refreshWalletData();
       renderAll();
       renderHistScreen();
       showToast('Sincronizado');

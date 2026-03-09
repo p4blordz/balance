@@ -39,3 +39,20 @@ Como la app usa Supabase en frontend:
 - La `anon key` puede ser publica.
 - Asegurate de tener RLS activo en `movimientos`.
 - Politicas recomendadas: cada usuario solo puede `select/insert/delete` sus propias filas (`user_id = auth.uid()`).
+
+## 4) Integracion Mercado Pago (V1)
+
+Aplicar SQL de billeteras:
+- `supabase_wallet_v1.sql`
+
+Deploy de funciones Edge:
+- `wallet-connect-start`
+- `wallet-connect-callback`
+- `wallet-sync`
+- `wallet-review-commit`
+
+Variables de entorno en Supabase Functions:
+- `APP_BASE_URL`
+- `MP_CLIENT_ID`
+- `MP_CLIENT_SECRET`
+- `MP_REDIRECT_URI` (URL publica de `wallet-connect-callback`)
