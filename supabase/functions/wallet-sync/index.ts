@@ -98,11 +98,10 @@ Deno.serve(async (req) => {
     if (!tokenRow) throw new Error("Connection token not found");
 
     const token = await refreshTokenIfNeeded({ admin, connectionId, tokenRow });
-    let ownAccountId = connection.provider_account_id ? String(connection.provider_account_id) : "";
-    if (!ownAccountId) {
-      const resolved = await fetchMercadoPagoUserId({ accessToken: token.accessToken });
-      if (!resolved) throw new Error("No se pudo resolver el user_id de Mercado Pago");
-      ownAccountId = resolved;
+    const resolved = await fetchMercadoPagoUserId({ accessToken: token.accessToken });
+    if (!resolved) throw new Error("No se pudo resolver el user_id de Mercado Pago");
+    const ownAccountId = resolved;
+    if (String(connection.provider_account_id || "") !== ownAccountId) {
       await admin
         .from("wallet_connections")
         .update({ provider_account_id: ownAccountId })
