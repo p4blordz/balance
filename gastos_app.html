@@ -3174,6 +3174,15 @@ function setWalletSyncStatus(message, kind) {
   el.className = `import-status ${kind || 'info'}`;
 }
 
+async function getWalletAccessTokenOrThrow() {
+  if (!window.supabase || !window.supabase.auth) throw new Error('Sesion no disponible');
+  const { data, error } = await window.supabase.auth.getSession();
+  if (error) throw error;
+  const token = data && data.session ? data.session.access_token : null;
+  if (!token) throw new Error('Sesion expirada. Vuelve a ingresar.');
+  return token;
+}
+
 async function startWalletConnect() {
   if (!requireAuthOrShowScreen()) return;
   if (!window.supabase) return;
@@ -3183,7 +3192,11 @@ async function startWalletConnect() {
   }
   try {
     setWalletSyncStatus('Preparando conexion...', 'info');
+    const accessToken = await getWalletAccessTokenOrThrow();
     const { data, error } = await window.supabase.functions.invoke('wallet-connect-start', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: {
         provider: WALLET_PROVIDER_MP,
         redirect_to: window.location.origin + window.location.pathname,
@@ -3232,7 +3245,11 @@ async function syncWalletNow() {
   renderWalletScreen();
   try {
     setWalletSyncStatus('Sincronizando movimientos...', 'info');
+    const accessToken = await getWalletAccessTokenOrThrow();
     const { data, error } = await window.supabase.functions.invoke('wallet-sync', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: {
         connection_id: walletState.activeConnection.id,
         date_from,
@@ -3275,7 +3292,13 @@ async function commitWalletReview() {
   renderWalletScreen();
   try {
     setWalletSyncStatus('Aplicando revision...', 'info');
-    const { data, error } = await window.supabase.functions.invoke('wallet-review-commit', { body: { items } });
+    const accessToken = await getWalletAccessTokenOrThrow();
+    const { data, error } = await window.supabase.functions.invoke('wallet-review-commit', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: { items }
+    });
     if (error) throw error;
     const imported = data && Number.isFinite(data.imported) ? data.imported : 0;
     const skipped = data && Number.isFinite(data.skipped) ? data.skipped : 0;
