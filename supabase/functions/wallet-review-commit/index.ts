@@ -4,6 +4,7 @@ type ReviewItem = {
   wallet_tx_id: string;
   category_id?: string | null;
   action?: string | null;
+  description?: string | null;
 };
 
 function normalizeAction(value?: string | null) {
@@ -27,6 +28,7 @@ Deno.serve(async (req) => {
         wallet_tx_id: String(x.wallet_tx_id || ""),
         category_id: x.category_id ? String(x.category_id) : null,
         action: normalizeAction(x.action),
+        description: x.description ? String(x.description).trim() : "",
       }))
       .filter(x => x.wallet_tx_id);
 
@@ -59,14 +61,16 @@ Deno.serve(async (req) => {
       }
       const category = selection.category_id || row.selected_cat || row.suggested_cat || "varios";
       const period = monthYearFromIso(row.occurred_at);
+      const finalDescription = selection.description || row.description || "Gasto Mercado Pago";
       toImport.push({
         tx_id: row.id,
         category,
+        description: finalDescription,
         movement: {
           user_id: user.id,
           type: "gasto",
           cat: category,
-          desc: row.description || "Gasto Mercado Pago",
+          desc: finalDescription,
           monto: amount,
           mes: period.mes,
           anio: period.anio,

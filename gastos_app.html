@@ -979,6 +979,17 @@ html, body {
   font-size: 0.68rem;
   color: var(--muted);
 }
+.wallet-review-title-input {
+  margin-top: 8px;
+  width: 100%;
+  background: #10121a;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 8px 9px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+}
 .wallet-review-controls {
   margin-top: 8px;
   display: grid;
@@ -1577,6 +1588,15 @@ function formatWalletDate(value) {
   const dt = new Date(value);
   if (Number.isNaN(dt.getTime())) return '-';
   return dt.toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
+function escapeHtml(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -3022,6 +3042,7 @@ async function refreshWalletData() {
         walletReviewDraft[tx.id] = {
           action: 'approve',
           category: tx.selected_cat || tx.suggested_cat || suggestWalletCategory(tx.description),
+          title: (tx.description || '').trim(),
         };
       });
 
@@ -3090,15 +3111,27 @@ function renderWalletScreen() {
     reviewList.innerHTML = `<div class="wallet-empty">No hay gastos pendientes para revisar.</div>`;
   } else {
     reviewList.innerHTML = walletState.pending.map(tx => {
-      const draft = walletReviewDraft[tx.id] || { action: 'approve', category: tx.selected_cat || tx.suggested_cat || 'varios' };
+      const draft = walletReviewDraft[tx.id] || {
+        action: 'approve',
+        category: tx.selected_cat || tx.suggested_cat || 'varios',
+        title: (tx.description || '').trim(),
+      };
       const catOptions = CATS.map(c => `<option value="${c.id}" ${draft.category === c.id ? 'selected' : ''}>${c.icon} ${c.label}</option>`).join('');
+      const safeDesc = escapeHtml(tx.description || 'Gasto Mercado Pago');
+      const safeTitle = escapeHtml(draft.title || '');
       return `
         <div class="wallet-review-item">
           <div class="wallet-review-top">
-            <div class="wallet-review-desc">${tx.description || 'Gasto Mercado Pago'}</div>
+            <div class="wallet-review-desc">${safeDesc}</div>
             <div class="wallet-review-amt">-${fmt(Math.abs(Number(tx.amount) || 0))}</div>
           </div>
           <div class="wallet-review-meta">${formatWalletDate(tx.occurred_at)} · Sugerida: ${tx.suggested_cat || '-'}</div>
+          <input
+            type="text"
+            class="wallet-review-title-input"
+            placeholder="Titulo (ej: pizzas, helado...)"
+            value="${safeTitle}"
+            oninput="setWalletItemTitle('${tx.id}', this.value)">
           <div class="wallet-review-controls">
             <select onchange="setWalletItemAction('${tx.id}', this.value)">
               <option value="approve" ${draft.action === 'approve' ? 'selected' : ''}>Aprobar</option>
@@ -3147,10 +3180,19 @@ function setWalletItemCategory(txId, category) {
   walletReviewDraft[txId].category = category;
 }
 
+function setWalletItemTitle(txId, title) {
+  if (!walletReviewDraft[txId]) return;
+  walletReviewDraft[txId].title = String(title || '');
+}
+
 function approveAllWalletPending() {
   walletState.pending.forEach(tx => {
     if (!walletReviewDraft[tx.id]) {
-      walletReviewDraft[tx.id] = { action: 'approve', category: tx.selected_cat || tx.suggested_cat || 'varios' };
+      walletReviewDraft[tx.id] = {
+        action: 'approve',
+        category: tx.selected_cat || tx.suggested_cat || 'varios',
+        title: (tx.description || '').trim(),
+      };
     } else {
       walletReviewDraft[tx.id].action = 'approve';
     }
@@ -3284,6 +3326,7 @@ async function commitWalletReview() {
       wallet_tx_id: tx.id,
       category_id: draft.category || tx.selected_cat || tx.suggested_cat || 'varios',
       action: draft.action === 'skip' ? 'skip' : 'approve',
+      description: (draft.title || tx.description || '').trim(),
     };
   });
   if (items.length === 0) return;
