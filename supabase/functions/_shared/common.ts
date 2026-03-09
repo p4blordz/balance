@@ -82,7 +82,28 @@ export function suggestCategory(description?: string | null) {
 }
 
 export function errorResponse(error: unknown, status = 400) {
-  const message = error instanceof Error ? error.message : String(error);
+  let message = "Unknown error";
+  if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof error === "string") {
+    message = error;
+  } else if (error && typeof error === "object") {
+    const e = error as Record<string, unknown>;
+    const fromFields = [e.message, e.details, e.hint, e.code]
+      .filter((v) => typeof v === "string" && (v as string).trim() !== "")
+      .map((v) => String(v).trim());
+    if (fromFields.length > 0) {
+      message = fromFields.join(" | ");
+    } else {
+      try {
+        message = JSON.stringify(error);
+      } catch {
+        message = String(error);
+      }
+    }
+  } else {
+    message = String(error);
+  }
   return json({ error: message }, status);
 }
 
