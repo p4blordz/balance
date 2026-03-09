@@ -114,11 +114,6 @@ function normalizePayment(item: Record<string, any>, ownAccountId?: string | nul
   const payerId = item.payer?.id != null ? String(item.payer.id) : "";
   const collectorId = item.collector?.id != null ? String(item.collector.id) : "";
   const opType = String(item.operation_type || "").toLowerCase();
-  const isOutgoingByPayer = payerId === own && (!collectorId || collectorId !== own);
-  const isOutgoingTransfer = opType.includes("money_transfer") && payerId === own && (!collectorId || collectorId !== own);
-  const isExpense = isOutgoingByPayer || isOutgoingTransfer;
-  if (!isExpense) return null;
-
   const description = String(
     item.description ||
     item.statement_descriptor ||
@@ -127,6 +122,19 @@ function normalizePayment(item: Record<string, any>, ownAccountId?: string | nul
     item.additional_info?.payer?.first_name ||
     "Gasto Mercado Pago",
   ).slice(0, 240);
+  const normalizedDesc = description.toLowerCase();
+  const looksLikeTransfer =
+    opType.includes("transfer") ||
+    opType.includes("account_fund") ||
+    normalizedDesc.includes("transfer") ||
+    normalizedDesc.includes("transferencia") ||
+    normalizedDesc.includes("bank transfer");
+  if (looksLikeTransfer) return null;
+
+  // Gasto real: vos sos payer y hay un tercero como collector.
+  if (payerId !== own) return null;
+  if (!collectorId || collectorId === own) return null;
+
   const occurredAt = item.date_approved || item.date_created || new Date().toISOString();
   return {
     providerTxId: String(item.id),
