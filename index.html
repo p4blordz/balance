@@ -1681,11 +1681,18 @@ function showScreen(s) {
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
   document.getElementById('screen-' + s).classList.add('active');
   document.getElementById('nav-' + s).classList.add('active');
+  updateFabVisibilityForScreen(s);
   if (s === 'hist') renderHistScreen();
   if (s === 'wallet') {
     renderWalletScreen();
     refreshWalletData();
   }
+}
+
+function updateFabVisibilityForScreen(screenId) {
+  const fab = document.getElementById('fabBtn');
+  if (!fab) return;
+  fab.classList.toggle('hidden', screenId === 'wallet');
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -3428,8 +3435,10 @@ function showAuthUI() {
 function showAppUI() {
   document.getElementById('authGate').classList.add('hidden');
   document.getElementById('appRoot').classList.remove('hidden');
-  document.getElementById('fabBtn').classList.remove('hidden');
   document.getElementById('logoutBtn').classList.remove('hidden');
+  const active = document.querySelector('.screen.active');
+  const activeScreen = active ? String(active.id || '').replace('screen-', '') : 'home';
+  updateFabVisibilityForScreen(activeScreen || 'home');
 }
 
 function requireAuthOrShowScreen() {
