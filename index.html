@@ -3039,9 +3039,9 @@ async function onRegisterSubmit(e) {
       return;
     }
 
-    setAuthMessage('register-msg', 'Cuenta creada. Inicia sesion o confirma el email si esta habilitado.', 'ok');
+    setAuthMessage('register-msg', 'Confirma tu email revisando la bandeja de entrada o correos spam.', 'ok');
     setAuthMode('login');
-    setAuthMessage('login-msg', 'Cuenta creada. Ahora inicia sesion.', 'ok');
+    setAuthMessage('login-msg', 'Confirma tu email revisando la bandeja de entrada o correos spam.', 'ok');
   } catch (e2) {
     setAuthMessage('register-msg', e2.message || 'No se pudo crear la cuenta', 'error');
   } finally {
