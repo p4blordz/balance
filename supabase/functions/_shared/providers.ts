@@ -1,5 +1,3 @@
-import { toDateRangeISO } from "./common.ts";
-
 export type OAuthTokenPayload = {
   access_token: string;
   refresh_token?: string | null;
@@ -21,6 +19,7 @@ export type NormalizedWalletTx = {
 const MP_AUTH_URL = "https://auth.mercadopago.com/authorization";
 const MP_TOKEN_URL = "https://api.mercadopago.com/oauth/token";
 const MP_PAYMENTS_URL = "https://api.mercadopago.com/v1/payments/search";
+const MP_USER_ME_URL = "https://api.mercadopago.com/users/me";
 
 export function buildMercadoPagoAuthUrl({
   clientId,
@@ -111,15 +110,23 @@ function normalizePayment(item: Record<string, any>, ownAccountId?: string | nul
   if (!Number.isFinite(amount) || amount <= 0 || status !== "approved") return null;
 
   const own = ownAccountId ? String(ownAccountId) : "";
+  if (!own) return null;
   const payerId = item.payer?.id != null ? String(item.payer.id) : "";
   const collectorId = item.collector?.id != null ? String(item.collector.id) : "";
   const opType = String(item.operation_type || "").toLowerCase();
-  const isOutgoingByPayer = own ? (payerId === own && collectorId !== own) : false;
-  const isOutgoingTransfer = own ? (opType.includes("money_transfer") && collectorId !== own) : false;
-  const isExpense = own ? (isOutgoingByPayer || isOutgoingTransfer) : true;
+  const isOutgoingByPayer = payerId === own && (!collectorId || collectorId !== own);
+  const isOutgoingTransfer = opType.includes("money_transfer") && payerId === own && (!collectorId || collectorId !== own);
+  const isExpense = isOutgoingByPayer || isOutgoingTransfer;
   if (!isExpense) return null;
 
-  const description = String(item.description || item.statement_descriptor || item.reason || "Gasto Mercado Pago").slice(0, 240);
+  const description = String(
+    item.description ||
+    item.statement_descriptor ||
+    item.reason ||
+    item.additional_info?.items?.[0]?.title ||
+    item.additional_info?.payer?.first_name ||
+    "Gasto Mercado Pago",
+  ).slice(0, 240);
   const occurredAt = item.date_approved || item.date_created || new Date().toISOString();
   return {
     providerTxId: String(item.id),
@@ -129,6 +136,30 @@ function normalizePayment(item: Record<string, any>, ownAccountId?: string | nul
     currency: String(item.currency_id || "ARS"),
     rawPayload: item,
   };
+}
+
+export async function fetchMercadoPagoUserId({
+  accessToken,
+}: {
+  accessToken: string;
+}): Promise<string | null> {
+  const response = await fetch(MP_USER_ME_URL, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Mercado Pago users/me failed: ${response.status} ${body.slice(0, 180)}`);
+  }
+  const payload = await response.json();
+  const id = payload?.id != null ? String(payload.id) : null;
+  return id && id.trim() ? id.trim() : null;
+}
+
+function toMercadoPagoRange(dateFrom: string, dateTo: string) {
+  // Mercado Pago reporta movimientos en horario local de cuenta; usar -03 evita cortes de fin de dia en AR.
+  const begin = `${dateFrom}T00:00:00.000-03:00`;
+  const end = `${dateTo}T23:59:59.999-03:00`;
+  return { begin, end };
 }
 
 export async function fetchMercadoPagoExpenses({
@@ -142,13 +173,11 @@ export async function fetchMercadoPagoExpenses({
   dateTo: string;
   ownAccountId?: string | null;
 }) {
-  const { begin, end } = toDateRangeISO(dateFrom, dateTo);
+  const { begin, end } = toMercadoPagoRange(dateFrom, dateTo);
   const all: NormalizedWalletTx[] = [];
   let offset = 0;
   const limit = 50;
-  let total = Number.POSITIVE_INFINITY;
-
-  while (offset < total && offset < 2000) {
+  while (offset < 4000) {
     const url = new URL(MP_PAYMENTS_URL);
     url.searchParams.set("sort", "date_created");
     url.searchParams.set("criteria", "desc");
@@ -166,8 +195,7 @@ export async function fetchMercadoPagoExpenses({
       throw new Error(`Mercado Pago payments search failed: ${response.status} ${body.slice(0, 180)}`);
     }
     const payload = await response.json();
-    const { results, total: nextTotal } = parseResults(payload);
-    total = Number.isFinite(nextTotal) ? nextTotal : results.length;
+    const { results } = parseResults(payload);
     if (results.length === 0) break;
 
     results.forEach((item: Record<string, any>) => {
@@ -175,7 +203,7 @@ export async function fetchMercadoPagoExpenses({
       if (normalized) all.push(normalized);
     });
 
-    offset += results.length;
+    offset += limit;
     if (results.length < limit) break;
   }
 
