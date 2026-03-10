@@ -216,6 +216,8 @@ html, body {
   margin-bottom: 20px;
   -webkit-overflow-scrolling: touch;
   cursor: grab;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 20px, black calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, black 20px, black calc(100% - 32px), transparent 100%);
 }
 .month-bar::-webkit-scrollbar { display: none; }
 .month-bar.dragging {
@@ -510,6 +512,7 @@ html, body {
 .type-btn.active[data-type="ingreso_mes"] { background: rgba(71,184,255,0.14); border-color: var(--blue); color: var(--blue); }
 .type-btn.active[data-type="ahorro_in"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .type-btn.active[data-type="ahorro_mov"] { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.type-btn.active[data-type="ahorro_gasto"] { background: rgba(255,183,77,0.12); border-color: #ffb74d; color: #ffb74d; }
 
 /* Cat grid */
 .cat-grid {
@@ -1424,7 +1427,7 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
   <div class="modal" id="modalContent">
     <div class="modal-handle"></div>
-    <div class="modal-title">Nuevo movimiento</div>
+    <div class="modal-title" id="modalTitle">Nuevo movimiento</div>
 
     <!-- Type -->
     <div class="type-toggle" style="grid-template-columns:1fr 1fr">
@@ -1434,6 +1437,9 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     <div class="type-toggle" style="grid-template-columns:1fr 1fr;margin-top:-6px">
       <button class="type-btn" data-type="ahorro_in" onclick="setType('ahorro_in')">M. Guardado</button>
       <button class="type-btn" data-type="ahorro_mov" onclick="setType('ahorro_mov')">Mov. Ahorros</button>
+    </div>
+    <div class="type-toggle" style="grid-template-columns:1fr;margin-top:-6px">
+      <button class="type-btn" data-type="ahorro_gasto" onclick="setType('ahorro_gasto')">Gasto de Ahorros</button>
     </div>
 
     <!-- Category (shown only for gasto) -->
@@ -1540,6 +1546,7 @@ function saveDB(d) {
 }
 let selectedType = 'gasto';
 let selectedCat = 'varios';
+let editingMovId = null;
 let activeMonth = null; // {mes, anio}
 let importInProgress = false;
 const WALLET_PROVIDER_MP = 'mercadopago';
@@ -1569,6 +1576,9 @@ const IMPORT_TYPE_MAP = {
   ahorromov: 'ahorro_mov',
   movahorro: 'ahorro_mov',
   movimientodeahorro: 'ahorro_mov',
+  ahorro_gasto: 'ahorro_gasto',
+  gastodeahorros: 'ahorro_gasto',
+  gastoahorros: 'ahorro_gasto',
 };
 
 const IMPORT_CAT_MAP = (() => {
@@ -1744,6 +1754,10 @@ function renderMonthBars() {
       const active = m.mes === activeMonth.mes && m.anio === activeMonth.anio;
       return `<button class="month-chip ${active ? 'active' : ''}" onclick="setActiveMonth('${m.mes}',${m.anio})">${m.mes} ${m.anio}</button>`;
     }).join('');
+    requestAnimationFrame(() => {
+      const activeChip = el.querySelector('.month-chip.active');
+      if (activeChip) activeChip.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    });
   });
 }
 
@@ -1772,21 +1786,22 @@ function getMonthStats(mes, anio) {
   const ahorro_mov = movs.filter(m => m.type === 'ahorro_mov').reduce((s,m) => s + m.monto, 0);
   const ahorro_mov_in = movs.filter(m => m.type === 'ahorro_mov' && m.monto > 0).reduce((s,m) => s + m.monto, 0);
   const ahorro_mov_out = movs.filter(m => m.type === 'ahorro_mov' && m.monto < 0).reduce((s,m) => s + Math.abs(m.monto), 0);
-  const bal_ahorros = ahorro_in + ahorro_mov;
+  const ahorro_gasto = movs.filter(m => m.type === 'ahorro_gasto').reduce((s,m) => s + m.monto, 0);
+  const bal_ahorros = ahorro_in + ahorro_mov - ahorro_gasto;
 
   // Total real: cuenta egresos/ingresos fuera del fondo de gastos
   const ingreso_total_real = ingreso_mes + ahorro_in + ahorro_mov_in;
-  const gasto_total_real = gasto + ahorro_mov_out;
+  const gasto_total_real = gasto + ahorro_mov_out + ahorro_gasto;
   const bal_total_real = ingreso_total_real - gasto_total_real;
 
-  // Por categoria
+  // Por categoria (gasto + ahorro_gasto)
   const byCat = {};
   CATS.forEach(c => byCat[c.id] = 0);
-  movs.filter(m => m.type === 'gasto').forEach(m => {
+  movs.filter(m => m.type === 'gasto' || m.type === 'ahorro_gasto').forEach(m => {
     byCat[m.cat] = (byCat[m.cat] || 0) + m.monto;
   });
 
-  return { ingreso_mes, gasto, bal_gastos, ahorro_in, ahorro_mov, bal_ahorros, byCat,
+  return { ingreso_mes, gasto, bal_gastos, ahorro_in, ahorro_mov, ahorro_gasto, bal_ahorros, byCat,
            ahorro_mov_in, ahorro_mov_out,
            ingreso_total_real, gasto_total_real, bal_total_real,
            // compat shims
@@ -1887,6 +1902,10 @@ function renderHome() {
       dot = `<div class="tx-dot" style="background:${cat.color}22">${cat.icon || '$'}</div>`;
       amountClass = 'style="color:var(--red)"';
       amountSign = m.monto < 0 ? '+' : '-';
+    } else if (m.type === 'ahorro_gasto') {
+      dot = `<div class="tx-dot" style="background:${cat.color}22">${cat.icon || '$'}</div>`;
+      amountClass = 'style="color:var(--accent)"';
+      amountSign = '-';
     } else if (m.type === 'ingreso_mes') {
       dot = `<div class="tx-dot" style="background:rgba(71,184,255,0.15)">IN</div>`;
       amountClass = 'style="color:var(--blue)"';
@@ -1903,18 +1922,18 @@ function renderHome() {
       amountSign = isIn ? '+' : '';
     }
 
-    const typeLabels = { gasto: cat.label||'Gasto', ingreso_mes:'Ingreso mes', ahorro_in:'M. Guardado', ahorro_mov:'Mov. Ahorros' };
+    const typeLabels = { gasto: cat.label||'Gasto', ingreso_mes:'Ingreso mes', ahorro_in:'M. Guardado', ahorro_mov:'Mov. Ahorros', ahorro_gasto: cat.label||'Gasto Ahorros' };
     const catLabel = typeLabels[m.type] || m.type;
 
     return `
-      <div class="tx-item">
+      <div class="tx-item" onclick="openEditModal('${m.id}')" style="cursor:pointer">
         ${dot}
         <div class="tx-info">
           <div class="tx-desc">${m.desc || catLabel}</div>
           <div class="tx-meta">${catLabel} - ${m.mes} ${m.anio}</div>
         </div>
         <div class="tx-amount" ${amountClass}>${amountSign}${fmt(m.monto)}</div>
-        <button class="tx-del" onclick="deleteMovement('${m.id}')">
+        <button class="tx-del" onclick="event.stopPropagation();deleteMovement('${m.id}')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
         </button>
       </div>
@@ -1985,7 +2004,7 @@ function renderDash() {
   document.getElementById('catBreakdown').innerHTML = CATS.map(c => {
     const val = stats.byCat[c.id] || 0;
     const barW = Math.round((val / maxGasto) * 100);
-    const items = movs.filter(m => m.type === 'gasto' && m.cat === c.id);
+    const items = movs.filter(m => (m.type === 'gasto' || m.type === 'ahorro_gasto') && m.cat === c.id);
     const detailHTML = items.length === 0
       ? `<div style="padding:6px 12px;color:var(--muted);font-size:0.72rem">Sin gastos</div>`
       : items.map(m => `
@@ -2103,7 +2122,7 @@ function setType(t) {
   selectedType = t;
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.type-btn[data-type="${t}"]`).classList.add('active');
-  document.getElementById('catSection').style.display = t === 'gasto' ? 'block' : 'none';
+  document.getElementById('catSection').style.display = (t === 'gasto' || t === 'ahorro_gasto') ? 'block' : 'none';
   // for ahorro_mov allow negative amounts (salidas)
   const montoInput = document.getElementById('fMonto');
   if (t === 'ahorro_mov') {
@@ -2116,7 +2135,9 @@ function setType(t) {
 }
 
 function openModal() {
-  const now = new Date();
+  editingMovId = null;
+  document.getElementById('modalTitle').textContent = 'Nuevo movimiento';
+  document.getElementById('saveMovementBtn').textContent = 'Guardar';
   document.getElementById('fMes').value = activeMonth.mes;
   document.getElementById('fAnio').value = activeMonth.anio;
   document.getElementById('fDesc').value = '';
@@ -2124,6 +2145,22 @@ function openModal() {
   setType('gasto');
   document.getElementById('modalOverlay').classList.add('open');
   setTimeout(() => document.getElementById('fDesc').focus(), 350);
+}
+
+function openEditModal(id) {
+  const mov = db.movements.find(m => m.id === id);
+  if (!mov) return;
+  editingMovId = id;
+  document.getElementById('modalTitle').textContent = 'Editar movimiento';
+  document.getElementById('saveMovementBtn').textContent = 'Actualizar';
+  document.getElementById('fMes').value = mov.mes;
+  document.getElementById('fAnio').value = mov.anio;
+  document.getElementById('fDesc').value = mov.desc || '';
+  setType(mov.type || 'gasto');
+  if (mov.cat) { selectedCat = mov.cat; buildCatGrid(); }
+  document.getElementById('fMonto').value = mov.monto;
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('fMonto').focus(), 350);
 }
 
 function closeModal() {
@@ -2563,17 +2600,14 @@ function parseImportStructuredSheet(grid, sheetName) {
           if (probe.rr < 0 || probe.cc < 0 || probe.rr >= grid.length) continue;
           const probeRow = Array.isArray(grid[probe.rr]) ? grid[probe.rr] : [];
           if (probe.cc >= probeRow.length) continue;
-          const key = `${probe.rr}:${probe.cc}:${type}`;
+          const key = `${probe.rr}:${probe.cc}`;
           if (seenIncomeCells.has(key)) continue;
 
           const amount = parseImportAmount(probeRow[probe.cc]);
           if (!Number.isFinite(amount) || amount === 0) continue;
 
           const explicitType = parseImportIncomeTypeFromLabel(label, false);
-          let type = explicitType;
-          if (!type) {
-            type = 'ahorro_mov';
-          }
+          const type = explicitType || 'ahorro_mov';
 
           parsed.push({
             type,
@@ -2797,9 +2831,24 @@ async function handleImportFileChange(event) {
     }
 
     const selectedSheetNamesRaw = selectSheetNamesByRange(sheetNames, rangeText);
-    const selectedSheetNames = selectedSheetNamesRaw === null ? [...sheetNames] : selectedSheetNamesRaw;
-    if (selectedSheetNamesRaw === null) {
-      showToast('Rango invalido: importando todas las hojas');
+    let selectedSheetNames;
+    if (selectedSheetNamesRaw === null && hasImportValue(rangeText)) {
+      const rangeParts = String(rangeText).trim().split(/\s*[-–—]\s*/).map(x => x.trim()).filter(Boolean);
+      let errorMsg = `Rango "${rangeText}" no valido.`;
+      if (rangeParts.length === 2) {
+        const s = resolveSheetNameReference(rangeParts[0], sheetNames);
+        const e = resolveSheetNameReference(rangeParts[1], sheetNames);
+        if (!s && !e) errorMsg = `No se encontraron las hojas "${rangeParts[0]}" ni "${rangeParts[1]}" en el archivo.\nHojas disponibles: ${sheetNames.join(', ')}`;
+        else if (!s) errorMsg = `No se encontro la hoja "${rangeParts[0]}" en el archivo.\nHojas disponibles: ${sheetNames.join(', ')}`;
+        else if (!e) errorMsg = `No se encontro la hoja "${rangeParts[1]}" en el archivo.\nHojas disponibles: ${sheetNames.join(', ')}`;
+      }
+      if (!confirm(`${errorMsg}\n\n¿Importar todas las hojas disponibles (${sheetNames.length})?`)) {
+        setImportStatus('', 'info');
+        return;
+      }
+      selectedSheetNames = [...sheetNames];
+    } else {
+      selectedSheetNames = selectedSheetNamesRaw === null ? [...sheetNames] : selectedSheetNamesRaw;
     }
     if (!selectedSheetNames.length) {
       showToast('No hay hojas para importar');
@@ -2841,7 +2890,7 @@ async function handleImportFileChange(event) {
       return;
     }
 
-    const shouldImport = confirm(`Importar ${parsed.length} movimientos desde ${processedSheets} hoja(s) de ${file.name}?\nRango: ${selectedSheetNames[0]} -> ${selectedSheetNames[selectedSheetNames.length - 1]}`);
+    const shouldImport = confirm(`Importar ${parsed.length} movimientos desde ${processedSheets} hoja(s) de ${file.name}?\nRango: ${selectedSheetNames[0]} -> ${selectedSheetNames[selectedSheetNames.length - 1]} (${selectedSheetNames.length} hojas seleccionadas)`);
     if (!shouldImport) return;
 
     setImportStatus(`Guardando ${parsed.length} movimientos...`, 'info');
@@ -2886,46 +2935,71 @@ async function saveMovement() {
 
   if (!Number.isFinite(monto) || (selectedType === 'ahorro_mov' ? monto === 0 : monto <= 0)) { showToast('Ingresa un monto valido'); return; }
   if (!mes || !anio) { showToast('Completa mes y anio'); return; }
-  if (selectedType === 'gasto' && !selectedCat) { showToast('Selecciona una categoria'); return; }
+  if ((selectedType === 'gasto' || selectedType === 'ahorro_gasto') && !selectedCat) { showToast('Selecciona una categoria'); return; }
 
-  const mov = {
-    type: selectedType,
-    cat: selectedType === 'gasto' ? selectedCat : null,
-    desc: desc || null,
-    monto: selectedType === 'ahorro_mov' ? monto : Math.abs(monto),
-    mes,
-    anio,
-    created: new Date().toISOString()
-  };
+  const isEditing = !!editingMovId;
 
-  const localId = Date.now().toString(36) + Math.random().toString(36).slice(2);
-  mov.id = localId;
-  db.movements.push(mov);
-  saveDB(db);
-
-  try {
-    if (navigator.onLine) {
-      const inserted = await insertMovementRemote(mov);
-      if (inserted && inserted.id && inserted.id !== localId) {
-        const idx = db.movements.findIndex(m => m.id === localId);
-        if (idx >= 0) db.movements[idx].id = inserted.id;
+  if (isEditing) {
+    const idx = db.movements.findIndex(m => m.id === editingMovId);
+    if (idx < 0) { showToast('Movimiento no encontrado'); return; }
+    const updated = {
+      ...db.movements[idx],
+      type: selectedType,
+      cat: (selectedType === 'gasto' || selectedType === 'ahorro_gasto') ? selectedCat : null,
+      desc: desc || null,
+      monto: selectedType === 'ahorro_mov' ? monto : Math.abs(monto),
+      mes,
+      anio,
+    };
+    db.movements[idx] = updated;
+    saveDB(db);
+    try {
+      if (navigator.onLine) {
+        await updateMovementRemote(updated);
+      } else {
+        enqueueOp({ type: 'update', movement: updated });
       }
-      saveDB(db);
-    } else {
-      enqueueOp({ type: 'insert', movement: mov });
+    } catch (e) {
+      enqueueOp({ type: 'update', movement: updated });
+      showToast('Sin red: actualizacion pendiente');
     }
-  } catch (e) {
-    enqueueOp({ type: 'insert', movement: mov });
-    showToast('Sin red: guardado pendiente');
+    editingMovId = null;
+  } else {
+    const mov = {
+      type: selectedType,
+      cat: (selectedType === 'gasto' || selectedType === 'ahorro_gasto') ? selectedCat : null,
+      desc: desc || null,
+      monto: selectedType === 'ahorro_mov' ? monto : Math.abs(monto),
+      mes,
+      anio,
+      created: new Date().toISOString()
+    };
+    const localId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    mov.id = localId;
+    db.movements.push(mov);
+    saveDB(db);
+    try {
+      if (navigator.onLine) {
+        const inserted = await insertMovementRemote(mov);
+        if (inserted && inserted.id && inserted.id !== localId) {
+          const idx = db.movements.findIndex(m => m.id === localId);
+          if (idx >= 0) db.movements[idx].id = inserted.id;
+        }
+        saveDB(db);
+      } else {
+        enqueueOp({ type: 'insert', movement: mov });
+      }
+    } catch (e) {
+      enqueueOp({ type: 'insert', movement: mov });
+      showToast('Sin red: guardado pendiente');
+    }
   }
 
-  // Switch to that month
   activeMonth = { mes, anio };
-
   closeModal();
   renderAll();
   renderHistScreen();
-  showToast('Guardado');
+  showToast(isEditing ? 'Actualizado' : 'Guardado');
 }
 
 function parseMovementAmount(raw) {
@@ -2936,9 +3010,24 @@ function parseMovementAmount(raw) {
   const hasComma = value.includes(',');
   const hasDot = value.includes('.');
   if (hasComma && hasDot) {
+    // 1.176.000,50 → 1176000.50 (puntos = miles AR, coma = decimal)
     value = value.replace(/\./g, '').replace(',', '.');
   } else if (hasComma) {
-    value = value.replace(',', '.');
+    const dotCount = (value.match(/,/g) || []).length;
+    if (dotCount > 1) {
+      // 1,176,000 → 1176000 (comas = miles estilo EN)
+      value = value.replace(/,/g, '');
+    } else {
+      // 1176,50 → 1176.50 (coma decimal AR)
+      value = value.replace(',', '.');
+    }
+  } else if (hasDot) {
+    const dotCount = (value.match(/\./g) || []).length;
+    if (dotCount > 1) {
+      // 1.176.000 → 1176000 (puntos = miles AR, sin decimal)
+      value = value.replace(/\./g, '');
+    }
+    // Un solo punto → decimal normal, no tocar
   }
   value = value.replace(/[^0-9.+-]/g, '');
   const parsed = Number(value);
@@ -3584,6 +3673,15 @@ async function insertMovementRemote(mov) {
   return normalizeMovement(data);
 }
 
+async function updateMovementRemote(mov) {
+  const payload = toRemoteMovement(mov);
+  const { error } = await window.supabase
+    .from('movimientos')
+    .update(payload)
+    .eq('id', mov.id);
+  if (error) throw error;
+}
+
 async function deleteMovementRemote(id) {
   const { error } = await window.supabase
     .from('movimientos')
@@ -3616,6 +3714,9 @@ async function flushQueue() {
         const inserted = await insertMovementRemote(op.movement);
         const idx = db.movements.findIndex(m => m.id === op.movement.id);
         if (idx >= 0) db.movements[idx].id = inserted.id;
+      }
+      if (op.type === 'update' && op.movement) {
+        await updateMovementRemote(op.movement);
       }
       if (op.type === 'delete' && op.id) {
         await deleteMovementRemote(op.id);
