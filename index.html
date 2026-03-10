@@ -1199,6 +1199,21 @@ html, body {
   letter-spacing: 0.04em;
   cursor: pointer;
 }
+.refresh-btn {
+  position: fixed;
+  top: 14px;
+  left: max(12px, calc((100vw - 480px)/2 + 12px));
+  z-index: 120;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(18,20,26,0.85);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+}
 
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -1238,6 +1253,7 @@ html, body {
 </div>
 
 <button id="logoutBtn" class="logout-btn hidden" type="button" onclick="logout()">SALIR</button>
+<button id="refreshBtn" class="refresh-btn hidden" type="button" onclick="location.reload()" title="Actualizar pagina">&#x21bb;</button>
 
 <script>
 // Auth UI fallback: keep tabs responsive even if app bootstrap fails.
@@ -2743,7 +2759,7 @@ async function persistImportedMovements(movements, onProgress) {
 
     try {
       if (navigator.onLine) {
-        const inserted = await insertMovementRemote(mov);
+        const inserted = await withTimeout(insertMovementRemote(mov), 10000);
         if (inserted && inserted.id && inserted.id !== mov.id) {
           const idx = db.movements.findIndex(x => x.id === mov.id);
           if (idx >= 0) db.movements[idx].id = inserted.id;
@@ -2955,7 +2971,7 @@ async function saveMovement() {
     saveDB(db);
     try {
       if (navigator.onLine) {
-        await updateMovementRemote(updated);
+        await withTimeout(updateMovementRemote(updated), 10000);
       } else {
         enqueueOp({ type: 'update', movement: updated });
       }
@@ -2980,7 +2996,7 @@ async function saveMovement() {
     saveDB(db);
     try {
       if (navigator.onLine) {
-        const inserted = await insertMovementRemote(mov);
+        const inserted = await withTimeout(insertMovementRemote(mov), 10000);
         if (inserted && inserted.id && inserted.id !== localId) {
           const idx = db.movements.findIndex(m => m.id === localId);
           if (idx >= 0) db.movements[idx].id = inserted.id;
@@ -3051,7 +3067,7 @@ async function deleteMovement(id) {
   }
   try {
     if (navigator.onLine) {
-      await deleteMovementRemote(id);
+      await withTimeout(deleteMovementRemote(id), 10000);
     } else {
       enqueueOp({ type: 'delete', id });
     }
@@ -3105,7 +3121,7 @@ async function deleteActivePeriod() {
   let queuedDeletes = 0;
   try {
     if (navigator.onLine && remoteDeleteIds.length > 0) {
-      await deleteMovementsRemote(remoteDeleteIds);
+      await withTimeout(deleteMovementsRemote(remoteDeleteIds), 10000);
     } else if (remoteDeleteIds.length > 0) {
       remoteDeleteIds.forEach(id => syncQueue.push({ type: 'delete', id }));
       queuedDeletes = remoteDeleteIds.length;
@@ -3132,11 +3148,11 @@ async function refreshWalletData() {
   if (!user || !window.supabase) return;
   walletState.loading = true;
   try {
-    const { data: connections, error: connError } = await window.supabase
+    const { data: connections, error: connError } = await withTimeout(window.supabase
       .from('wallet_connections')
       .select('id,provider,provider_account_id,status,token_expires_at,created_at,updated_at')
       .eq('provider', WALLET_PROVIDER_MP)
-      .order('updated_at', { ascending: false });
+      .order('updated_at', { ascending: false }), 10000);
     if (connError) throw connError;
 
     walletState.connections = connections || [];
@@ -3147,13 +3163,13 @@ async function refreshWalletData() {
     walletReviewDraft = {};
 
     if (walletState.activeConnection) {
-      const { data: pendingRows, error: pendingError } = await window.supabase
+      const { data: pendingRows, error: pendingError } = await withTimeout(window.supabase
         .from('wallet_transactions')
         .select('id,description,amount,currency,occurred_at,suggested_cat,selected_cat,review_status,connection_id')
         .eq('connection_id', walletState.activeConnection.id)
         .in('review_status', ['pending', 'approved'])
         .order('occurred_at', { ascending: false })
-        .limit(200);
+        .limit(200), 10000);
       if (pendingError) throw pendingError;
       walletState.pending = pendingRows || [];
 
@@ -3165,12 +3181,12 @@ async function refreshWalletData() {
         };
       });
 
-      const { data: runsRows, error: runsError } = await window.supabase
+      const { data: runsRows, error: runsError } = await withTimeout(window.supabase
         .from('wallet_sync_runs')
         .select('id,provider,date_from,date_to,fetched_count,pending_count,duplicated_count,status,error_message,created_at')
         .eq('connection_id', walletState.activeConnection.id)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(20), 10000);
       if (runsError) throw runsError;
       walletState.runs = runsRows || [];
     }
@@ -3379,7 +3395,7 @@ async function startWalletConnect() {
   try {
     setWalletSyncStatus('Preparando conexion...', 'info');
     const accessToken = await getWalletAccessTokenOrThrow();
-    const { data, error } = await window.supabase.functions.invoke('wallet-connect-start', {
+    const { data, error } = await withTimeout(window.supabase.functions.invoke('wallet-connect-start', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -3387,7 +3403,7 @@ async function startWalletConnect() {
         provider: WALLET_PROVIDER_MP,
         redirect_to: window.location.origin + window.location.pathname,
       }
-    });
+    }), 15000);
     if (error) throw error;
     if (!data || !data.redirect_url) throw new Error('No se obtuvo URL de autorizacion');
     window.location.href = data.redirect_url;
@@ -3432,7 +3448,7 @@ async function syncWalletNow() {
   try {
     setWalletSyncStatus('Sincronizando movimientos...', 'info');
     const accessToken = await getWalletAccessTokenOrThrow();
-    const { data, error } = await window.supabase.functions.invoke('wallet-sync', {
+    const { data, error } = await withTimeout(window.supabase.functions.invoke('wallet-sync', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -3441,7 +3457,7 @@ async function syncWalletNow() {
         date_from,
         date_to,
       }
-    });
+    }), 30000);
     if (error) throw error;
     const fetched = data && Number.isFinite(data.fetched) ? data.fetched : 0;
     const pending = data && Number.isFinite(data.pending) ? data.pending : 0;
@@ -3481,12 +3497,12 @@ async function commitWalletReview() {
   try {
     setWalletSyncStatus('Aplicando revision...', 'info');
     const accessToken = await getWalletAccessTokenOrThrow();
-    const { data, error } = await window.supabase.functions.invoke('wallet-review-commit', {
+    const { data, error } = await withTimeout(window.supabase.functions.invoke('wallet-review-commit', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
       body: { items }
-    });
+    }), 30000);
     if (error) throw error;
     const imported = data && Number.isFinite(data.imported) ? data.imported : 0;
     const skipped = data && Number.isFinite(data.skipped) ? data.skipped : 0;
@@ -3567,6 +3583,7 @@ function showAuthUI() {
   document.getElementById('appRoot').classList.add('hidden');
   document.getElementById('fabBtn').classList.add('hidden');
   document.getElementById('logoutBtn').classList.add('hidden');
+  document.getElementById('refreshBtn').classList.add('hidden');
   closeModal();
 }
 
@@ -3574,6 +3591,7 @@ function showAppUI() {
   document.getElementById('authGate').classList.add('hidden');
   document.getElementById('appRoot').classList.remove('hidden');
   document.getElementById('logoutBtn').classList.remove('hidden');
+  document.getElementById('refreshBtn').classList.remove('hidden');
   const active = document.querySelector('.screen.active');
   const activeScreen = active ? String(active.id || '').replace('screen-', '') : 'home';
   updateFabVisibilityForScreen(activeScreen || 'home');
@@ -3623,6 +3641,14 @@ function enqueueOp(op) {
   saveUserQueue(user.id, syncQueue);
 }
 
+function withTimeout(promise, ms) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise(function(_, reject) { timer = setTimeout(function() { reject(new Error('Timeout')); }, ms); })
+  ]).finally(function() { clearTimeout(timer); });
+}
+
 function normalizeMovement(m) {
   return {
     id: String(m.id),
@@ -3657,11 +3683,11 @@ async function fetchMovementsRemote() {
   const pageSize = 1000;
   let from = 0;
   while (true) {
-    const { data, error } = await window.supabase
+    const { data, error } = await withTimeout(window.supabase
       .from('movimientos')
       .select('id,type,cat,desc,monto,mes,anio,created')
       .order('created', { ascending: true })
-      .range(from, from + pageSize - 1);
+      .range(from, from + pageSize - 1), 10000);
     if (error) throw error;
     if (!data || data.length === 0) break;
     all.push(...data);
@@ -3721,15 +3747,15 @@ async function flushQueue() {
   for (const op of pending) {
     try {
       if (op.type === 'insert' && op.movement) {
-        const inserted = await insertMovementRemote(op.movement);
+        const inserted = await withTimeout(insertMovementRemote(op.movement), 10000);
         const idx = db.movements.findIndex(m => m.id === op.movement.id);
         if (idx >= 0) db.movements[idx].id = inserted.id;
       }
       if (op.type === 'update' && op.movement) {
-        await updateMovementRemote(op.movement);
+        await withTimeout(updateMovementRemote(op.movement), 10000);
       }
       if (op.type === 'delete' && op.id) {
-        await deleteMovementRemote(op.id);
+        await withTimeout(deleteMovementRemote(op.id), 10000);
       }
     } catch (e) {
       keep.push(op);
@@ -3789,23 +3815,24 @@ async function renderForCurrentState() {
   renderAll();
   renderHistScreen();
   try {
-    await runLegacyImportFlow(authState.user.id);
+    await withTimeout(runLegacyImportFlow(authState.user.id), 10000);
     await fetchMovementsRemote();
-    await flushQueue();
+    await withTimeout(flushQueue(), 15000);
     await fetchMovementsRemote();
     await refreshWalletData();
     renderAll();
     renderHistScreen();
   } catch (e) {
+    console.warn('init sync error:', e);
     showToast('Modo offline: usando cache local');
-    await refreshWalletData();
+    try { await refreshWalletData(); } catch (e2) { /* ignore */ }
   }
 }
 
 async function logout() {
   if (window.supabase && window.supabase.auth) {
     try {
-      await window.supabase.auth.signOut();
+      await withTimeout(window.supabase.auth.signOut(), 5000);
     } catch (e) {
       // keep local logout flow even when remote signout fails
       console.warn('signOut error:', e);
