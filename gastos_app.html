@@ -1695,7 +1695,8 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
       <div class="screen-sub">Divide gastos de viajes y eventos</div>
     </div>
     <div id="splitGroupList"></div>
-    <button class="split-new-btn" type="button" onclick="openSplitGroupModal()">+ Nuevo grupo</button>
+    <button class="split-new-btn" type="button" onclick="openSplitGroupModal()" id="splitNewGroupBtn">+ Nuevo grupo</button>
+    <button class="split-new-btn" type="button" onclick="openJoinGroupModal()" style="border-color:var(--blue);color:var(--blue)">Unirme a un grupo</button>
   </div>
 
   <!-- Split detail overlay -->
@@ -1892,6 +1893,26 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     </div>
 
     <button class="btn-submit" type="button" onclick="saveSplitGroup()">Crear grupo</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: UNIRME A GRUPO ══════════ -->
+<div class="modal-overlay" id="joinGroupModalOverlay" onclick="if(event.target===this)closeJoinGroupModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Unirme a un grupo</div>
+
+    <div class="field">
+      <label>Codigo de invitacion</label>
+      <input type="text" id="joinGroupCode" placeholder="Ej: ABC123" autocomplete="off" maxlength="6" style="text-transform:uppercase;letter-spacing:0.2em;font-weight:600;text-align:center;font-size:1.2rem">
+    </div>
+
+    <div class="field">
+      <label>Tu nombre en el grupo</label>
+      <input type="text" id="joinGroupName" placeholder="Ej: Ana, Milton..." autocomplete="off">
+    </div>
+
+    <button class="btn-submit" type="button" onclick="joinSplitGroup()">Unirme</button>
   </div>
 </div>
 
@@ -4087,6 +4108,7 @@ let splitExpenses = {};  // { groupId: [expenses] }
 let currentSplitGroupId = null;
 let splitTempParticipants = [];
 let splitCurrentMode = 'equal';
+let splitGuestMode = false;
 let splitCurrentUnit = 'percent'; // 'percent' or 'amount'
 let editingSplitGroupId = null; // for editing group
 
@@ -4144,16 +4166,29 @@ async function fetchSplitExpenses(groupId) {
   }
 }
 
+function generateInviteCode() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var code = '';
+  for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 async function insertSplitGroup(group) {
   var user = getCurrentUserOrNull();
   if (!user || !window.supabase) return null;
   try {
+    var inviteCode = generateInviteCode();
     var res = await withTimeout(window.supabase
       .from('split_groups')
-      .insert({ ...group, user_id: user.id })
+      .insert({ ...group, user_id: user.id, invite_code: inviteCode })
       .select()
       .single(), 10000);
     if (res.error) throw res.error;
+    // Add owner as member
+    var ownerName = group.participants && group.participants[0] ? group.participants[0] : (user.email || 'Owner');
+    await withTimeout(window.supabase
+      .from('split_group_members')
+      .insert({ group_id: res.data.id, user_id: user.id, participant_name: ownerName, role: 'owner' }), 10000);
     return res.data;
   } catch (e) {
     showToast('Error al crear grupo');
@@ -4483,6 +4518,16 @@ function renderSplitDetail(groupId) {
       html += '</div>';
     }
 
+    // Invite code (owner only, active groups)
+    var owner = isGroupOwner(group);
+    if (owner && group.invite_code) {
+      html += '<div class="split-settlement" style="margin:0 16px 12px;display:flex;align-items:center;justify-content:space-between;padding:12px 14px">' +
+        '<div><div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px">Codigo para invitar</div>' +
+        '<div style="font-size:1.1rem;font-weight:700;letter-spacing:0.15em;color:var(--accent)">' + group.invite_code + '</div></div>' +
+        '<button class="btn-alt" type="button" onclick="copyInviteCode(\'' + group.invite_code + '\')" style="padding:8px 14px;font-size:0.75rem">Copiar</button>' +
+      '</div>';
+    }
+
     // Expense list
     html += '<div class="split-section-label">Gastos (' + expenses.length + ')</div>';
     if (expenses.length === 0) {
@@ -4509,13 +4554,18 @@ function renderSplitDetail(groupId) {
   document.getElementById('splitDetailBody').innerHTML = html;
 
   // Bottom actions
+  var owner = isGroupOwner(group);
   var bottomHtml = '';
   if (group.status === 'active') {
-    bottomHtml = '<button class="btn-submit" type="button" onclick="openSplitExpenseModal()">Agregar gasto</button>' +
-      '<button class="btn-alt" type="button" onclick="closeSplitGroupAction(\'' + groupId + '\')">Cerrar grupo</button>';
+    bottomHtml = '<button class="btn-submit" type="button" onclick="openSplitExpenseModal()">Agregar gasto</button>';
+    if (owner) {
+      bottomHtml += '<button class="btn-alt" type="button" onclick="closeSplitGroupAction(\'' + groupId + '\')">Cerrar grupo</button>';
+    }
   } else {
-    bottomHtml = '<button class="btn-alt" type="button" onclick="reopenSplitGroup(\'' + groupId + '\')">Reabrir grupo</button>' +
-      '<button class="btn-alt" type="button" style="color:var(--red)" onclick="deleteSplitGroup(\'' + groupId + '\')">Eliminar grupo</button>';
+    if (owner) {
+      bottomHtml = '<button class="btn-alt" type="button" onclick="reopenSplitGroup(\'' + groupId + '\')">Reabrir grupo</button>' +
+        '<button class="btn-alt" type="button" style="color:var(--red)" onclick="deleteSplitGroup(\'' + groupId + '\')">Eliminar grupo</button>';
+    }
   }
   document.getElementById('splitDetailBottom').innerHTML = bottomHtml;
 }
@@ -4805,8 +4855,147 @@ async function initSplitModule() {
       await fetchSplitExpenses(splitGroups[i].id);
     }
     renderSplitScreen();
+    checkGuestMode();
   } catch (e) {
     console.warn('initSplitModule error:', e);
+  }
+}
+
+// ── Join group modal ──
+function openJoinGroupModal() {
+  document.getElementById('joinGroupCode').value = '';
+  document.getElementById('joinGroupName').value = '';
+  document.getElementById('joinGroupModalOverlay').classList.add('open');
+}
+
+function closeJoinGroupModal() {
+  document.getElementById('joinGroupModalOverlay').classList.remove('open');
+}
+
+async function joinSplitGroup() {
+  var user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return;
+  var code = (document.getElementById('joinGroupCode').value || '').trim().toUpperCase();
+  var name = (document.getElementById('joinGroupName').value || '').trim();
+  if (!code || code.length < 4) { showToast('Ingresa un codigo valido'); return; }
+  if (!name) { showToast('Ingresa tu nombre'); return; }
+
+  try {
+    // Find group by invite code
+    var res = await withTimeout(window.supabase
+      .from('split_groups')
+      .select('*')
+      .eq('invite_code', code)
+      .single(), 10000);
+    if (res.error || !res.data) { showToast('Codigo no encontrado'); return; }
+    var group = res.data;
+
+    // Check if already a member
+    var memberCheck = await withTimeout(window.supabase
+      .from('split_group_members')
+      .select('id')
+      .eq('group_id', group.id)
+      .eq('user_id', user.id), 10000);
+    if (memberCheck.data && memberCheck.data.length > 0) {
+      showToast('Ya estas en este grupo');
+      closeJoinGroupModal();
+      return;
+    }
+    // Also check if owner
+    if (group.user_id === user.id) {
+      showToast('Sos el creador de este grupo');
+      closeJoinGroupModal();
+      return;
+    }
+
+    // Add as member
+    await withTimeout(window.supabase
+      .from('split_group_members')
+      .insert({ group_id: group.id, user_id: user.id, participant_name: name, role: 'member' }), 10000);
+
+    // Add name to participants array if not already there
+    var participants = group.participants || [];
+    if (participants.indexOf(name) === -1) {
+      participants.push(name);
+      await withTimeout(window.supabase
+        .from('split_groups')
+        .update({ participants: participants, updated_at: new Date().toISOString() })
+        .eq('id', group.id), 10000);
+    }
+
+    // Refresh
+    await fetchSplitGroups();
+    for (var i = 0; i < splitGroups.length; i++) {
+      await fetchSplitExpenses(splitGroups[i].id);
+    }
+    renderSplitScreen();
+    closeJoinGroupModal();
+    showToast('Te uniste a "' + group.name + '"');
+  } catch (e) {
+    showToast('Error al unirse');
+    console.error('joinSplitGroup:', e);
+  }
+}
+
+// ── Invite code display ──
+function copyInviteCode(code) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(function() {
+      showToast('Codigo copiado: ' + code);
+    });
+  } else {
+    // Fallback
+    var t = document.createElement('textarea');
+    t.value = code;
+    document.body.appendChild(t);
+    t.select();
+    document.execCommand('copy');
+    document.body.removeChild(t);
+    showToast('Codigo copiado: ' + code);
+  }
+}
+
+function isGroupOwner(group) {
+  var user = getCurrentUserOrNull();
+  return user && group && group.user_id === user.id;
+}
+
+// ── Guest mode ──
+function checkGuestMode() {
+  var user = getCurrentUserOrNull();
+  if (!user) { splitGuestMode = false; return; }
+  // If user owns any split group OR has movements → normal mode
+  var ownsGroups = splitGroups.some(function(g) { return g.user_id === user.id; });
+  var hasMovements = db && db.movements && db.movements.length > 0;
+  if (ownsGroups || hasMovements) {
+    splitGuestMode = false;
+  } else if (splitGroups.length > 0) {
+    // Has groups but doesn't own any → guest mode
+    splitGuestMode = true;
+  } else {
+    splitGuestMode = false;
+  }
+  applyGuestMode();
+}
+
+function applyGuestMode() {
+  var navBtns = ['nav-home', 'nav-dash', 'nav-hist', 'nav-wallet'];
+  var newGroupBtn = document.getElementById('splitNewGroupBtn');
+  if (splitGuestMode) {
+    navBtns.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    if (newGroupBtn) newGroupBtn.style.display = 'none';
+    document.getElementById('fabBtn').classList.add('hidden');
+    // Force split screen
+    showScreen('split');
+  } else {
+    navBtns.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = '';
+    });
+    if (newGroupBtn) newGroupBtn.style.display = '';
   }
 }
 
