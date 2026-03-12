@@ -2190,7 +2190,7 @@ function showScreen(s) {
     renderWalletScreen();
     refreshWalletData();
   }
-  if (s === 'split') renderSplitScreen();
+  if (s === 'split') { renderSplitScreen(); refreshSplitData(); }
 }
 
 function updateFabVisibilityForScreen(screenId) {
@@ -4259,7 +4259,12 @@ async function insertSplitExpense(expense) {
     if (res.error) throw res.error;
     return res.data;
   } catch (e) {
-    showToast('Error al guardar gasto');
+    if (e && e.code === '42501') {
+      showToast('Este grupo fue eliminado o ya no tenes acceso');
+      refreshSplitData();
+    } else {
+      showToast('Error al guardar gasto');
+    }
     console.error('insertSplitExpense:', e);
     return null;
   }
@@ -4877,6 +4882,33 @@ async function initSplitModule() {
     checkGuestMode();
   } catch (e) {
     console.warn('initSplitModule error:', e);
+  }
+}
+
+// ── Refresh split data from server ──
+async function refreshSplitData() {
+  try {
+    await fetchSplitGroups();
+    // Clean up expenses for groups that no longer exist
+    var groupIds = splitGroups.map(function(g) { return g.id; });
+    Object.keys(splitExpenses).forEach(function(gid) {
+      if (groupIds.indexOf(gid) === -1) delete splitExpenses[gid];
+    });
+    for (var i = 0; i < splitGroups.length; i++) {
+      await fetchSplitExpenses(splitGroups[i].id);
+    }
+    saveSplitLocal();
+    renderSplitScreen();
+    // If viewing a detail that no longer exists, close it
+    if (currentSplitGroupId && groupIds.indexOf(currentSplitGroupId) === -1) {
+      showToast('Este grupo fue eliminado');
+      closeSplitDetail();
+    } else if (currentSplitGroupId) {
+      renderSplitDetail(currentSplitGroupId);
+    }
+    checkGuestMode();
+  } catch (e) {
+    console.warn('refreshSplitData error:', e);
   }
 }
 
