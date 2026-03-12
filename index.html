@@ -2598,6 +2598,16 @@ function setType(t) {
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.type-btn[data-type="${t}"]`).classList.add('active');
   document.getElementById('catSection').style.display = (t === 'gasto' || t === 'ahorro_gasto') ? 'block' : 'none';
+  // Placeholder dinámico según tipo
+  var descInput = document.getElementById('fDesc');
+  var placeholders = {
+    gasto: 'Ej: supermercado, nafta, delivery...',
+    ingreso_mes: 'Ej: sueldo, freelance, venta...',
+    ahorro_in: 'Ej: ahorro marzo, plazo fijo...',
+    ahorro_mov: 'Ej: transferencia, retiro...',
+    ahorro_gasto: 'Ej: cuota auto, emergencia...'
+  };
+  descInput.placeholder = placeholders[t] || 'Descripcion';
   // for ahorro_mov allow negative amounts (salidas)
   const montoInput = document.getElementById('fMonto');
   if (t === 'ahorro_mov') {
