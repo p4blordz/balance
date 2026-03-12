@@ -4553,10 +4553,10 @@ function renderSplitDetail(groupId) {
     // Invite code (owner only, active groups)
     var owner = isGroupOwner(group);
     if (owner && group.invite_code) {
-      html += '<div class="split-settlement" style="margin:0 16px 12px;display:flex;align-items:center;justify-content:space-between;padding:12px 14px">' +
-        '<div><div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px">Codigo para invitar</div>' +
-        '<div style="font-size:1.1rem;font-weight:700;letter-spacing:0.15em;color:var(--accent)">' + group.invite_code + '</div></div>' +
-        '<button class="btn-alt" type="button" onclick="copyInviteCode(\'' + group.invite_code + '\')" style="padding:8px 14px;font-size:0.75rem">Copiar</button>' +
+      html += '<div style="margin:0 16px 12px;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:10px;cursor:pointer" onclick="copyInviteCode(\'' + group.invite_code + '\')">' +
+        '<span style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Invitar:</span>' +
+        '<span style="font-size:0.78rem;font-weight:600;letter-spacing:0.12em;color:var(--text);font-family:\'JetBrains Mono\',monospace">' + group.invite_code + '</span>' +
+        '<svg style="margin-left:auto;opacity:0.4" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>' +
       '</div>';
     }
 
