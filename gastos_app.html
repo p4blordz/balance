@@ -4379,43 +4379,61 @@ function renderSplitDetail(groupId) {
   var balances = calcSplitBalances(groupId);
   var settlements = calcSettlements(balances);
   var participants = group.participants || [];
+  var totalGastos = expenses.reduce(function(s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
+
+  // Calculate how much each person paid in total
+  var paidByPerson = {};
+  participants.forEach(function(p) { paidByPerson[p] = 0; });
+  expenses.forEach(function(exp) {
+    if (paidByPerson[exp.paid_by] !== undefined) {
+      paidByPerson[exp.paid_by] += parseFloat(exp.amount) || 0;
+    }
+  });
 
   var html = '';
 
-  // Balances
-  html += '<div class="split-section-label">Balances</div>';
-  html += '<div class="split-balances">';
-  participants.forEach(function(p) {
-    var val = Math.round(balances[p] || 0);
-    var cls = val > 0 ? 'positive' : val < 0 ? 'negative' : 'zero';
-    var sign = val > 0 ? '+' : '';
-    html += '<div class="split-balance-chip">' +
-      '<div class="split-balance-name">' + escHtml(p) + '</div>' +
-      '<div class="split-balance-amount ' + cls + '">' + sign + fmt(val) + '</div>' +
+  if (group.status === 'closed') {
+    // ── LIQUIDACIÓN FINAL ──
+    html += '<div class="split-settlement" style="margin:16px 16px 0;text-align:center;padding:20px">' +
+      '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px">Grupo cerrado</div>' +
+      '<div style="font-size:1.6rem;font-weight:700;color:var(--accent)">' + fmt(totalGastos) + '</div>' +
+      '<div style="font-size:0.78rem;color:var(--muted);margin-top:2px">' + expenses.length + ' gastos en total</div>' +
     '</div>';
-  });
-  html += '</div>';
 
-  // Settlements
-  if (settlements.length > 0) {
-    html += '<div class="split-section-label">Resumen de deudas</div>';
-    html += '<div class="split-settlement">';
-    settlements.forEach(function(s) {
-      html += '<div class="split-settlement-row">' +
-        '<span>' + escHtml(s.from) + '</span>' +
-        '<span class="split-settlement-arrow">&rarr;</span>' +
-        '<span>' + escHtml(s.to) + '</span>' +
-        '<span class="split-settlement-amount">' + fmt(s.amount) + '</span>' +
+    // Cuánto pagó cada uno
+    html += '<div class="split-section-label">Cuanto pago cada uno</div>';
+    html += '<div class="split-balances">';
+    participants.forEach(function(p) {
+      var paid = Math.round(paidByPerson[p] || 0);
+      html += '<div class="split-balance-chip">' +
+        '<div class="split-balance-name">' + escHtml(p) + ' pago</div>' +
+        '<div class="split-balance-amount" style="color:var(--text)">' + fmt(paid) + '</div>' +
       '</div>';
     });
     html += '</div>';
-  }
 
-  // Expense list
-  html += '<div class="split-section-label">Gastos (' + expenses.length + ')</div>';
-  if (expenses.length === 0) {
-    html += '<div class="split-empty"><div class="split-empty-text">Sin gastos todavia. Toca + para agregar.</div></div>';
-  } else {
+    // Liquidación: quién le debe a quién
+    if (settlements.length > 0) {
+      html += '<div class="split-section-label">Liquidacion final</div>';
+      html += '<div class="split-settlement" style="margin:0 16px 12px">';
+      settlements.forEach(function(s) {
+        html += '<div style="padding:12px 0;border-bottom:1px solid var(--border);font-size:0.9rem">' +
+          '<div style="color:var(--muted);font-size:0.72rem;margin-bottom:4px">Segun los gastos registrados</div>' +
+          '<div><strong style="color:var(--red)">' + escHtml(s.from) + '</strong> le debe a ' +
+          '<strong style="color:var(--green)">' + escHtml(s.to) + '</strong></div>' +
+          '<div style="font-size:1.3rem;font-weight:700;color:var(--accent);margin-top:4px">' + fmt(s.amount) + '</div>' +
+        '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="split-settlement" style="margin:0 16px 12px;text-align:center;padding:16px">' +
+        '<div style="color:var(--green);font-weight:600">Estan todos a mano!</div>' +
+      '</div>';
+    }
+
+    // Lista de gastos (colapsable)
+    html += '<details style="margin:0 16px 12px">' +
+      '<summary style="cursor:pointer;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-weight:600;padding:8px 0">Ver detalle de gastos (' + expenses.length + ')</summary>';
     expenses.forEach(function(exp) {
       var initial = (exp.paid_by || '?')[0].toUpperCase();
       var splitInfo = formatSplitInfo(exp, participants);
@@ -4426,11 +4444,62 @@ function renderSplitDetail(groupId) {
           '<div class="split-expense-meta">Pago ' + escHtml(exp.paid_by) + ' &middot; ' + splitInfo + '</div>' +
         '</div>' +
         '<div class="split-expense-amount">' + fmt(parseFloat(exp.amount) || 0) + '</div>' +
-        (group.status === 'active' ? '<button class="split-expense-del" onclick="event.stopPropagation();deleteSplitExpenseRemote(\'' + exp.id + '\',\'' + groupId + '\')" title="Eliminar">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
-        '</button>' : '') +
       '</div>';
     });
+    html += '</details>';
+
+  } else {
+    // ── GRUPO ACTIVO ──
+    // Balances
+    html += '<div class="split-section-label">Balances</div>';
+    html += '<div class="split-balances">';
+    participants.forEach(function(p) {
+      var val = Math.round(balances[p] || 0);
+      var cls = val > 0 ? 'positive' : val < 0 ? 'negative' : 'zero';
+      var sign = val > 0 ? '+' : '';
+      html += '<div class="split-balance-chip">' +
+        '<div class="split-balance-name">' + escHtml(p) + '</div>' +
+        '<div class="split-balance-amount ' + cls + '">' + sign + fmt(val) + '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    // Settlements
+    if (settlements.length > 0) {
+      html += '<div class="split-section-label">Resumen de deudas</div>';
+      html += '<div class="split-settlement">';
+      settlements.forEach(function(s) {
+        html += '<div class="split-settlement-row">' +
+          '<span>' + escHtml(s.from) + '</span>' +
+          '<span class="split-settlement-arrow">&rarr;</span>' +
+          '<span>' + escHtml(s.to) + '</span>' +
+          '<span class="split-settlement-amount">' + fmt(s.amount) + '</span>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+
+    // Expense list
+    html += '<div class="split-section-label">Gastos (' + expenses.length + ')</div>';
+    if (expenses.length === 0) {
+      html += '<div class="split-empty"><div class="split-empty-text">Sin gastos todavia. Toca + para agregar.</div></div>';
+    } else {
+      expenses.forEach(function(exp) {
+        var initial = (exp.paid_by || '?')[0].toUpperCase();
+        var splitInfo = formatSplitInfo(exp, participants);
+        html += '<div class="split-expense-item">' +
+          '<div class="split-expense-dot">' + initial + '</div>' +
+          '<div class="split-expense-info">' +
+            '<div class="split-expense-desc">' + escHtml(exp.description) + '</div>' +
+            '<div class="split-expense-meta">Pago ' + escHtml(exp.paid_by) + ' &middot; ' + splitInfo + '</div>' +
+          '</div>' +
+          '<div class="split-expense-amount">' + fmt(parseFloat(exp.amount) || 0) + '</div>' +
+          '<button class="split-expense-del" onclick="event.stopPropagation();deleteSplitExpenseRemote(\'' + exp.id + '\',\'' + groupId + '\')" title="Eliminar">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+          '</button>' +
+        '</div>';
+      });
+    }
   }
 
   document.getElementById('splitDetailBody').innerHTML = html;
