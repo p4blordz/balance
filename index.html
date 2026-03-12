@@ -4290,6 +4290,25 @@ function calcSettlements(balances) {
   return settlements;
 }
 
+function formatSplitInfo(exp, participants) {
+  var amount = parseFloat(exp.amount) || 0;
+  if (exp.split_mode !== 'custom' || !exp.split_detail) {
+    // Equal split
+    var n = participants.length || 1;
+    var each = Math.round(amount / n);
+    return 'Partes iguales (' + fmt(each) + ' c/u)';
+  }
+  var detail = typeof exp.split_detail === 'string' ? JSON.parse(exp.split_detail) : exp.split_detail;
+  var parts = [];
+  Object.keys(detail).forEach(function(name) {
+    var val = parseFloat(detail[name]) || 0;
+    if (val <= 0) return;
+    var pct = amount > 0 ? Math.round(val / amount * 100) : 0;
+    parts.push(name + ' ' + pct + '%');
+  });
+  return parts.join(' - ');
+}
+
 // ── Rendering ──
 function renderSplitScreen() {
   var container = document.getElementById('splitGroupList');
@@ -4399,7 +4418,7 @@ function renderSplitDetail(groupId) {
   } else {
     expenses.forEach(function(exp) {
       var initial = (exp.paid_by || '?')[0].toUpperCase();
-      var splitInfo = exp.split_mode === 'custom' ? 'Personalizado' : 'Partes iguales';
+      var splitInfo = formatSplitInfo(exp, participants);
       html += '<div class="split-expense-item">' +
         '<div class="split-expense-dot">' + initial + '</div>' +
         '<div class="split-expense-info">' +
