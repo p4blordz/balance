@@ -515,6 +515,16 @@ html, body {
 .type-btn.active[data-type="ahorro_gasto"] { background: rgba(255,183,77,0.12); border-color: #ffb74d; color: #ffb74d; }
 .type-btn.active[data-split="equal"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .type-btn.active[data-split="custom"] { background: rgba(71,184,255,0.14); border-color: var(--blue); color: var(--blue); }
+.type-btn.active[data-splitunit="percent"] { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.type-btn.active[data-splitunit="amount"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.split-custom-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 6px;
+  text-align: right;
+}
+.split-custom-hint.error { color: var(--red); }
+.split-custom-hint.ok { color: var(--green); }
 
 /* Cat grid */
 .cat-grid {
@@ -1915,8 +1925,13 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     </div>
 
     <div class="field" id="splitCustomSection" style="display:none">
-      <label>Monto por persona</label>
+      <div class="type-toggle" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
+        <button class="type-btn active" data-splitunit="percent" onclick="setSplitUnit('percent')">Porcentaje %</button>
+        <button class="type-btn" data-splitunit="amount" onclick="setSplitUnit('amount')">Monto $</button>
+      </div>
+      <label id="splitCustomLabel">Porcentaje por persona</label>
       <div class="split-custom-fields" id="splitCustomFields"></div>
+      <div id="splitCustomHint" class="split-custom-hint"></div>
     </div>
 
     <button class="btn-submit" type="button" onclick="saveSplitExpense()">Guardar gasto</button>
@@ -4068,6 +4083,7 @@ let splitExpenses = {};  // { groupId: [expenses] }
 let currentSplitGroupId = null;
 let splitTempParticipants = [];
 let splitCurrentMode = 'equal';
+let splitCurrentUnit = 'percent'; // 'percent' or 'amount'
 let editingSplitGroupId = null; // for editing group
 
 function splitCacheKey(userId) { return 'gastos_app_split_' + userId; }
@@ -4498,6 +4514,7 @@ function openSplitExpenseModal() {
   var group = splitGroups.find(function(g) { return g.id === currentSplitGroupId; });
   if (!group) return;
   splitCurrentMode = 'equal';
+  splitCurrentUnit = 'percent';
 
   document.getElementById('splitExpenseDesc').value = '';
   document.getElementById('splitExpenseAmount').value = '';
@@ -4509,8 +4526,12 @@ function openSplitExpenseModal() {
   }).join('');
 
   // Reset split mode toggle
-  document.querySelectorAll('#splitExpenseModalOverlay .type-btn').forEach(function(b) {
+  document.querySelectorAll('#splitExpenseModalOverlay .type-btn[data-split]').forEach(function(b) {
     b.classList.toggle('active', b.getAttribute('data-split') === 'equal');
+  });
+  // Reset unit toggle
+  document.querySelectorAll('#splitCustomSection .type-btn[data-splitunit]').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-splitunit') === 'percent');
   });
   document.getElementById('splitCustomSection').style.display = 'none';
   renderSplitCustomFields(group.participants);
@@ -4536,12 +4557,61 @@ function setSplitMode(mode) {
 
 function renderSplitCustomFields(participants) {
   var container = document.getElementById('splitCustomFields');
+  var isPercent = splitCurrentUnit === 'percent';
+  var placeholder = isPercent ? 'Ej: 50' : '0';
+  var suffix = isPercent ? '%' : '$';
   container.innerHTML = (participants || []).map(function(p) {
     return '<div class="split-custom-row">' +
       '<label>' + escHtml(p) + '</label>' +
-      '<input type="number" class="split-custom-amount" data-participant="' + escHtml(p) + '" placeholder="0" inputmode="decimal" step="any">' +
+      '<div style="display:flex;align-items:center;gap:4px;flex:0 0 120px">' +
+        '<input type="number" class="split-custom-amount" data-participant="' + escHtml(p) + '" placeholder="' + placeholder + '" inputmode="decimal" step="any" oninput="updateSplitCustomHint()">' +
+        '<span style="color:var(--muted);font-size:0.8rem;min-width:14px">' + suffix + '</span>' +
+      '</div>' +
     '</div>';
   }).join('');
+  document.getElementById('splitCustomLabel').textContent = isPercent ? 'Porcentaje por persona' : 'Monto por persona';
+  updateSplitCustomHint();
+}
+
+function setSplitUnit(unit) {
+  splitCurrentUnit = unit;
+  document.querySelectorAll('#splitCustomSection .type-btn').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-splitunit') === unit);
+  });
+  var group = splitGroups.find(function(g) { return g.id === currentSplitGroupId; });
+  if (group) renderSplitCustomFields(group.participants);
+}
+
+function updateSplitCustomHint() {
+  var hint = document.getElementById('splitCustomHint');
+  if (!hint) return;
+  var total = 0;
+  document.querySelectorAll('.split-custom-amount').forEach(function(input) {
+    total += parseFloat(input.value) || 0;
+  });
+  if (splitCurrentUnit === 'percent') {
+    var diff = Math.abs(total - 100);
+    if (diff < 0.01) {
+      hint.textContent = 'Total: 100% ✓';
+      hint.className = 'split-custom-hint ok';
+    } else {
+      hint.textContent = 'Total: ' + total.toFixed(0) + '% (debe sumar 100%)';
+      hint.className = 'split-custom-hint error';
+    }
+  } else {
+    var amount = parseFloat(document.getElementById('splitExpenseAmount').value) || 0;
+    var diff = Math.abs(total - amount);
+    if (amount > 0 && diff < 1) {
+      hint.textContent = 'Total: ' + fmt(total) + ' ✓';
+      hint.className = 'split-custom-hint ok';
+    } else if (amount > 0) {
+      hint.textContent = 'Total: ' + fmt(total) + ' (debe sumar ' + fmt(amount) + ')';
+      hint.className = 'split-custom-hint error';
+    } else {
+      hint.textContent = '';
+      hint.className = 'split-custom-hint';
+    }
+  }
 }
 
 async function saveSplitExpense() {
@@ -4557,15 +4627,31 @@ async function saveSplitExpense() {
   var splitDetail = null;
   if (splitCurrentMode === 'custom') {
     splitDetail = {};
-    var total = 0;
-    document.querySelectorAll('.split-custom-amount').forEach(function(input) {
-      var val = parseFloat(input.value) || 0;
-      splitDetail[input.getAttribute('data-participant')] = val;
-      total += val;
-    });
-    if (Math.abs(total - amount) > 1) {
-      showToast('La suma personalizada ($' + Math.round(total).toLocaleString('es-AR') + ') no coincide con el total ($' + Math.round(amount).toLocaleString('es-AR') + ')');
-      return;
+    if (splitCurrentUnit === 'percent') {
+      var totalPct = 0;
+      document.querySelectorAll('.split-custom-amount').forEach(function(input) {
+        totalPct += parseFloat(input.value) || 0;
+      });
+      if (Math.abs(totalPct - 100) > 0.5) {
+        showToast('Los porcentajes deben sumar 100% (actual: ' + totalPct.toFixed(0) + '%)');
+        return;
+      }
+      // Convert percentages to amounts
+      document.querySelectorAll('.split-custom-amount').forEach(function(input) {
+        var pct = parseFloat(input.value) || 0;
+        splitDetail[input.getAttribute('data-participant')] = Math.round(amount * pct / 100);
+      });
+    } else {
+      var total = 0;
+      document.querySelectorAll('.split-custom-amount').forEach(function(input) {
+        var val = parseFloat(input.value) || 0;
+        splitDetail[input.getAttribute('data-participant')] = val;
+        total += val;
+      });
+      if (Math.abs(total - amount) > 1) {
+        showToast('La suma ($' + Math.round(total).toLocaleString('es-AR') + ') no coincide con el total ($' + Math.round(amount).toLocaleString('es-AR') + ')');
+        return;
+      }
     }
   }
 
