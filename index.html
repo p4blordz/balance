@@ -2262,7 +2262,11 @@ function getMonthStats(mes, anio) {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RENDER
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-const fmt = v => '$' + Math.round(v).toLocaleString('es-AR');
+const fmt = function(v) {
+  var n = Number(v) || 0;
+  if (n === Math.floor(n)) return '$' + Math.round(n).toLocaleString('es-AR');
+  return '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 function renderAll() {
   renderMonthBars();
@@ -4269,9 +4273,9 @@ function calcSettlements(balances) {
   var debtors = [];
   var creditors = [];
   Object.keys(balances).forEach(function(name) {
-    var val = Math.round(balances[name]);
-    if (val < 0) debtors.push({ name: name, amount: -val });
-    else if (val > 0) creditors.push({ name: name, amount: val });
+    var val = balances[name];
+    if (val < -0.01) debtors.push({ name: name, amount: -val });
+    else if (val > 0.01) creditors.push({ name: name, amount: val });
   });
   debtors.sort(function(a, b) { return b.amount - a.amount; });
   creditors.sort(function(a, b) { return b.amount - a.amount; });
@@ -4279,13 +4283,13 @@ function calcSettlements(balances) {
   var di = 0, ci = 0;
   while (di < debtors.length && ci < creditors.length) {
     var pay = Math.min(debtors[di].amount, creditors[ci].amount);
-    if (pay > 0) {
+    if (pay > 0.01) {
       settlements.push({ from: debtors[di].name, to: creditors[ci].name, amount: pay });
     }
     debtors[di].amount -= pay;
     creditors[ci].amount -= pay;
-    if (debtors[di].amount === 0) di++;
-    if (creditors[ci].amount === 0) ci++;
+    if (debtors[di].amount < 0.01) di++;
+    if (creditors[ci].amount < 0.01) ci++;
   }
   return settlements;
 }
@@ -4295,7 +4299,7 @@ function formatSplitInfo(exp, participants) {
   if (exp.split_mode !== 'custom' || !exp.split_detail) {
     // Equal split
     var n = participants.length || 1;
-    var each = Math.round(amount / n);
+    var each = amount / n;
     return 'Partes iguales (' + fmt(each) + ' c/u)';
   }
   var detail = typeof exp.split_detail === 'string' ? JSON.parse(exp.split_detail) : exp.split_detail;
@@ -4454,9 +4458,9 @@ function renderSplitDetail(groupId) {
     html += '<div class="split-section-label">Estado de cuentas</div>';
     html += '<div class="split-balances">';
     participants.forEach(function(p) {
-      var val = Math.round(balances[p] || 0);
-      var cls = val > 0 ? 'positive' : val < 0 ? 'negative' : 'zero';
-      var label = val > 0 ? 'recibe' : val < 0 ? 'debe' : 'a mano';
+      var val = balances[p] || 0;
+      var cls = val > 0.01 ? 'positive' : val < -0.01 ? 'negative' : 'zero';
+      var label = val > 0.01 ? 'recibe' : val < -0.01 ? 'debe' : 'a mano';
       html += '<div class="split-balance-chip">' +
         '<div class="split-balance-name">' + escHtml(p) + ' <span style="opacity:0.6">' + label + '</span></div>' +
         '<div class="split-balance-amount ' + cls + '">' + fmt(Math.abs(val)) + '</div>' +
