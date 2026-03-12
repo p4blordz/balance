@@ -4178,17 +4178,32 @@ async function insertSplitGroup(group) {
   if (!user || !window.supabase) return null;
   try {
     var inviteCode = generateInviteCode();
+    var insertData = { ...group, user_id: user.id };
+    // Try with invite_code first, fallback without if column doesn't exist yet
     var res = await withTimeout(window.supabase
       .from('split_groups')
-      .insert({ ...group, user_id: user.id, invite_code: inviteCode })
+      .insert({ ...insertData, invite_code: inviteCode })
       .select()
       .single(), 10000);
-    if (res.error) throw res.error;
-    // Add owner as member
-    var ownerName = group.participants && group.participants[0] ? group.participants[0] : (user.email || 'Owner');
-    await withTimeout(window.supabase
-      .from('split_group_members')
-      .insert({ group_id: res.data.id, user_id: user.id, participant_name: ownerName, role: 'owner' }), 10000);
+    if (res.error) {
+      // Fallback: try without invite_code (column might not exist yet)
+      console.warn('Insert with invite_code failed, retrying without:', res.error.message);
+      res = await withTimeout(window.supabase
+        .from('split_groups')
+        .insert(insertData)
+        .select()
+        .single(), 10000);
+      if (res.error) throw res.error;
+    }
+    // Add owner as member (non-fatal if table doesn't exist yet)
+    try {
+      var ownerName = group.participants && group.participants[0] ? group.participants[0] : (user.email || 'Owner');
+      await withTimeout(window.supabase
+        .from('split_group_members')
+        .insert({ group_id: res.data.id, user_id: user.id, participant_name: ownerName, role: 'owner' }), 10000);
+    } catch (memberErr) {
+      console.warn('split_group_members insert failed (non-fatal):', memberErr);
+    }
     return res.data;
   } catch (e) {
     showToast('Error al crear grupo');
@@ -4643,6 +4658,10 @@ async function saveSplitGroup() {
       splitGroups.unshift(created);
       splitExpenses[created.id] = [];
       saveSplitLocal();
+    } else {
+      closeSplitGroupModal();
+      renderSplitScreen();
+      return; // toast de error ya se mostró en insertSplitGroup
     }
   }
   closeSplitGroupModal();
