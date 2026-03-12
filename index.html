@@ -4900,14 +4900,11 @@ async function joinSplitGroup() {
   if (!name) { showToast('Ingresa tu nombre'); return; }
 
   try {
-    // Find group by invite code
+    // Find group by invite code (uses SECURITY DEFINER function to bypass RLS)
     var res = await withTimeout(window.supabase
-      .from('split_groups')
-      .select('*')
-      .eq('invite_code', code)
-      .single(), 10000);
-    if (res.error || !res.data) { showToast('Codigo no encontrado'); return; }
-    var group = res.data;
+      .rpc('find_group_by_invite_code', { p_code: code }), 10000);
+    if (res.error || !res.data || res.data.length === 0) { showToast('Codigo no encontrado'); return; }
+    var group = res.data[0];
 
     // Check if already a member
     var memberCheck = await withTimeout(window.supabase
