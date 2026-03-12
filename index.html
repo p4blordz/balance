@@ -4,38 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0b0f">
+<meta name="theme-color" content="#161819">
 <title>Mis Gastos</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
 
 :root {
-  --bg: #0a0b0f;
-  --card: #12141a;
-  --card2: #1a1d26;
-  --border: #23263a;
-  --accent: #e8ff47;
-  --accent-dim: rgba(232,255,71,0.12);
-  --red: #ff5757;
-  --red-dim: rgba(255,87,87,0.12);
-  --green: #4fffb0;
-  --green-dim: rgba(79,255,176,0.12);
-  --blue: #47b8ff;
-  --text: #f0f2ff;
-  --muted: #555870;
-  --muted2: #3a3d52;
+  --bg: #161819;
+  --card: #1e2023;
+  --card2: #262a2d;
+  --border: #333840;
+  --accent: #3abff8;
+  --accent-dim: rgba(58,191,248,0.12);
+  --red: #ff6b6b;
+  --red-dim: rgba(255,107,107,0.12);
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.12);
+  --blue: #60a5fa;
+  --text: #f0f1f4;
+  --muted: #6b7280;
+  --muted2: #4b5563;
 
-  --cat-varios: #47b8ff;
-  --cat-salidas: #ff8c47;
-  --cat-alimentos: #4fffb0;
-  --cat-impuestos: #c47aff;
-  --cat-moto: #ffdb47;
-  --cat-casa: #ff5757;
-  --cat-ingreso: #e8ff47;
-  --cat-extra: #47ffee;
-  --glass: rgba(255,255,255,0.035);
-  --shadow-soft: 0 12px 30px rgba(0,0,0,0.35);
-  --shadow-card: 0 0 0 1px rgba(255,255,255,0.04), 0 12px 32px rgba(0,0,0,0.32);
+  --cat-varios: #60a5fa;
+  --cat-salidas: #fb923c;
+  --cat-alimentos: #34d399;
+  --cat-impuestos: #a78bfa;
+  --cat-moto: #fbbf24;
+  --cat-casa: #f87171;
+  --cat-ingreso: #3abff8;
+  --cat-extra: #22d3ee;
+  --glass: rgba(255,255,255,0.045);
+  --shadow-soft: 0 12px 30px rgba(0,0,0,0.28);
+  --shadow-card: 0 0 0 1px rgba(255,255,255,0.05), 0 12px 32px rgba(0,0,0,0.25);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -44,9 +44,9 @@ html, body {
   height: 100%;
   font-family: 'Outfit', sans-serif;
   background:
-    radial-gradient(1300px 500px at -10% -20%, rgba(71,184,255,0.14), transparent 55%),
-    radial-gradient(1200px 460px at 110% -25%, rgba(232,255,71,0.1), transparent 55%),
-    linear-gradient(180deg, #090b11 0%, #0a0b0f 35%, #0c101a 100%);
+    radial-gradient(1300px 500px at -10% -20%, rgba(58,191,248,0.10), transparent 55%),
+    radial-gradient(1200px 460px at 110% -25%, rgba(58,191,248,0.06), transparent 55%),
+    linear-gradient(180deg, #141617 0%, #161819 35%, #181c1f 100%);
   color: var(--text);
   overflow-x: hidden;
 }
@@ -80,7 +80,7 @@ html, body {
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  background: linear-gradient(180deg, rgba(24,27,35,0.95), rgba(14,16,23,0.97));
+  background: linear-gradient(180deg, rgba(32,34,38,0.95), rgba(22,24,25,0.97));
   backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255,255,255,0.08);
   display: flex;
@@ -135,7 +135,7 @@ html, body {
   padding: 52px 20px 20px;
   position: sticky;
   top: 0;
-  background: linear-gradient(180deg, rgba(10,11,15,0.95) 72%, rgba(10,11,15,0));
+  background: linear-gradient(180deg, rgba(22,24,25,0.95) 72%, rgba(22,24,25,0));
   backdrop-filter: blur(8px);
   z-index: 10;
 }
@@ -242,8 +242,8 @@ html, body {
 .month-chip.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #0a0b0f;
-  box-shadow: 0 10px 20px rgba(232,255,71,0.24);
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(58,191,248,0.24);
 }
 
 .period-tools {
@@ -257,7 +257,7 @@ html, body {
 .period-delete-btn {
   border: 1px solid rgba(255,87,87,0.35);
   background: rgba(255,87,87,0.1);
-  color: #ff8b8b;
+  color: #fca5a5;
   border-radius: 999px;
   padding: 6px 11px;
   font-family: 'Outfit', sans-serif;
@@ -371,8 +371,8 @@ html, body {
   height: 50px;
   padding: 0 18px;
   border-radius: 999px;
-  background: linear-gradient(145deg, #f2ff6b, #d9ff2f);
-  color: #0a0b0f;
+  background: linear-gradient(145deg, #56ccf9, #2b9de8);
+  color: #ffffff;
   border: none;
   font-size: 0.72rem;
   font-weight: 600;
@@ -383,7 +383,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 14px 34px rgba(232,255,71,0.34), 0 4px 10px rgba(0,0,0,0.35);
+  box-shadow: 0 14px 34px rgba(58,191,248,0.34), 0 4px 10px rgba(0,0,0,0.35);
   transition: transform 0.2s, box-shadow 0.2s;
   z-index: 99;
 }
@@ -463,7 +463,7 @@ html, body {
 
 .field input, .field select, .field textarea {
   width: 100%;
-  background: #151923;
+  background: #1c1f22;
   border: 1.5px solid rgba(255,255,255,0.08);
   border-radius: 12px;
   padding: 13px 16px;
@@ -477,12 +477,12 @@ html, body {
 }
 .field input:focus, .field select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(232,255,71,0.15);
+  box-shadow: 0 0 0 3px rgba(58,191,248,0.15);
 }
 
 .field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555870' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
 
-.field select option { background: #1a1d26; }
+.field select option { background: #262a2d; }
 
 /* Type toggle */
 .type-toggle {
@@ -509,12 +509,12 @@ html, body {
   box-shadow: 0 10px 18px rgba(0,0,0,0.24);
 }
 .type-btn.active[data-type="gasto"] { background: var(--red-dim); border-color: var(--red); color: var(--red); }
-.type-btn.active[data-type="ingreso_mes"] { background: rgba(71,184,255,0.14); border-color: var(--blue); color: var(--blue); }
+.type-btn.active[data-type="ingreso_mes"] { background: rgba(96,165,250,0.14); border-color: var(--blue); color: var(--blue); }
 .type-btn.active[data-type="ahorro_in"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .type-btn.active[data-type="ahorro_mov"] { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-.type-btn.active[data-type="ahorro_gasto"] { background: rgba(255,183,77,0.12); border-color: #ffb74d; color: #ffb74d; }
+.type-btn.active[data-type="ahorro_gasto"] { background: rgba(251,191,36,0.12); border-color: #fbbf24; color: #fbbf24; }
 .type-btn.active[data-split="equal"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-.type-btn.active[data-split="custom"] { background: rgba(71,184,255,0.14); border-color: var(--blue); color: var(--blue); }
+.type-btn.active[data-split="custom"] { background: rgba(96,165,250,0.14); border-color: var(--blue); color: var(--blue); }
 .type-btn.active[data-splitunit="percent"] { background: var(--green-dim); border-color: var(--green); color: var(--green); }
 .type-btn.active[data-splitunit="amount"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .split-custom-hint {
@@ -558,8 +558,8 @@ html, body {
   width: 100%;
   padding: 16px;
   border-radius: 14px;
-  background: linear-gradient(145deg, #f2ff6b, #d9ff2f);
-  color: #0a0b0f;
+  background: linear-gradient(145deg, #56ccf9, #2b9de8);
+  color: #ffffff;
   font-family: 'Outfit', sans-serif;
   font-size: 1rem;
   font-weight: 700;
@@ -568,7 +568,7 @@ html, body {
   margin-top: 4px;
   transition: transform 0.2s, box-shadow 0.2s;
   letter-spacing: -0.01em;
-  box-shadow: 0 12px 26px rgba(232,255,71,0.24);
+  box-shadow: 0 12px 26px rgba(58,191,248,0.24);
 }
 .btn-submit:hover { transform: translateY(-1px); }
 .btn-submit:active { transform: scale(0.97); }
@@ -895,7 +895,7 @@ html, body {
   font-weight: 600;
 }
 .badge-ingreso { background: rgba(79,255,176,0.1); color: var(--green); }
-.badge-extra   { background: rgba(232,255,71,0.1);  color: var(--accent); }
+.badge-extra   { background: rgba(58,191,248,0.1);  color: var(--accent); }
 .income-item-amt {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.78rem;
@@ -999,7 +999,7 @@ html, body {
   height: 22px;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,0.14);
-  background: #10121a;
+  background: #1c1f22;
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1;
@@ -1020,7 +1020,7 @@ html, body {
 .wallet-review-title-input {
   margin-top: 8px;
   width: 100%;
-  background: #10121a;
+  background: #1c1f22;
   border: 1px solid rgba(255,255,255,0.08);
   color: var(--text);
   border-radius: 9px;
@@ -1036,7 +1036,7 @@ html, body {
 }
 .wallet-review-controls select {
   width: 100%;
-  background: #10121a;
+  background: #1c1f22;
   border: 1px solid rgba(255,255,255,0.08);
   color: var(--text);
   border-radius: 9px;
@@ -1055,8 +1055,8 @@ html, body {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.68rem;
   color: var(--accent);
-  background: rgba(232,255,71,0.1);
-  border: 1px solid rgba(232,255,71,0.3);
+  background: rgba(58,191,248,0.1);
+  border: 1px solid rgba(58,191,248,0.3);
 }
 .wallet-empty {
   padding: 12px;
@@ -1098,8 +1098,8 @@ html, body {
   justify-content: center;
   padding: 24px;
   background:
-    radial-gradient(1200px 450px at 10% -20%, rgba(71,184,255,0.1), transparent 50%),
-    radial-gradient(1200px 450px at 90% -20%, rgba(232,255,71,0.08), transparent 50%),
+    radial-gradient(1200px 450px at 10% -20%, rgba(96,165,250,0.1), transparent 50%),
+    radial-gradient(1200px 450px at 90% -20%, rgba(58,191,248,0.08), transparent 50%),
     var(--bg);
 }
 
@@ -1145,7 +1145,7 @@ html, body {
 }
 
 .auth-toggle button.active {
-  color: #0a0b0f;
+  color: #ffffff;
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -1158,7 +1158,7 @@ html, body {
 
 .auth-form input {
   width: 100%;
-  background: #10121a;
+  background: #1c1f22;
   border: 1px solid rgba(255,255,255,0.08);
   color: var(--text);
   border-radius: 10px;
@@ -1170,14 +1170,14 @@ html, body {
 .auth-submit {
   border: none;
   border-radius: 10px;
-  background: linear-gradient(145deg, #f2ff6b, #d9ff2f);
-  color: #0a0b0f;
+  background: linear-gradient(145deg, #56ccf9, #2b9de8);
+  color: #ffffff;
   padding: 12px;
   font-family: 'Outfit', sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 20px rgba(232,255,71,0.25);
+  box-shadow: 0 10px 20px rgba(58,191,248,0.25);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .auth-submit:hover { transform: translateY(-1px); }
@@ -1201,7 +1201,7 @@ html, body {
   right: max(12px, calc((100vw - 480px)/2 + 12px));
   z-index: 120;
   border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(18,20,26,0.85);
+  background: rgba(30,32,35,0.85);
   backdrop-filter: blur(8px);
   color: var(--text);
   border-radius: 999px;
@@ -1217,7 +1217,7 @@ html, body {
   left: max(12px, calc((100vw - 480px)/2 + 12px));
   z-index: 120;
   border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(18,20,26,0.85);
+  background: rgba(30,32,35,0.85);
   backdrop-filter: blur(8px);
   color: var(--text);
   border-radius: 999px;
@@ -1642,8 +1642,8 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     <div class="balance-ring-wrap">
       <div class="balance-ring">
         <svg viewBox="0 0 160 160">
-          <circle cx="80" cy="80" r="64" fill="none" stroke="#1a1d26" stroke-width="14"/>
-          <circle id="ringCircle" cx="80" cy="80" r="64" fill="none" stroke="#e8ff47" stroke-width="14"
+          <circle cx="80" cy="80" r="64" fill="none" stroke="#262a2d" stroke-width="14"/>
+          <circle id="ringCircle" cx="80" cy="80" r="64" fill="none" stroke="#3abff8" stroke-width="14"
             stroke-dasharray="402.1" stroke-dashoffset="402.1"
             stroke-linecap="round"/>
         </svg>
@@ -1971,12 +1971,12 @@ const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov
 const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 const CATS = [
-  { id: 'varios',     label: 'Varios',      icon: '🧩', color: '#47b8ff' },
-  { id: 'salidas',    label: 'Salidas',     icon: '🎉', color: '#ff8c47' },
-  { id: 'alimentos',  label: 'Alimentos',   icon: '🛒', color: '#4fffb0' },
-  { id: 'impuestos',  label: 'Impuestos',   icon: '🧾', color: '#c47aff' },
-  { id: 'moto',       label: 'Transporte',  icon: '🚌', color: '#ffdb47' },
-  { id: 'casa',       label: 'Casa',        icon: '🏠', color: '#ff5757' },
+  { id: 'varios',     label: 'Varios',      icon: '🧩', color: '#60a5fa' },
+  { id: 'salidas',    label: 'Salidas',     icon: '🎉', color: '#fb923c' },
+  { id: 'alimentos',  label: 'Alimentos',   icon: '🛒', color: '#34d399' },
+  { id: 'impuestos',  label: 'Impuestos',   icon: '🧾', color: '#a78bfa' },
+  { id: 'moto',       label: 'Transporte',  icon: '🚌', color: '#fbbf24' },
+  { id: 'casa',       label: 'Casa',        icon: '🏠', color: '#f87171' },
 ];
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2382,7 +2382,7 @@ function renderHome() {
       amountClass = 'style="color:var(--accent)"';
       amountSign = '-';
     } else if (m.type === 'ingreso_mes') {
-      dot = `<div class="tx-dot" style="background:rgba(71,184,255,0.15)">IN</div>`;
+      dot = `<div class="tx-dot" style="background:rgba(96,165,250,0.15)">IN</div>`;
       amountClass = 'style="color:var(--blue)"';
       amountSign = '+';
     } else if (m.type === 'ahorro_in') {
@@ -2429,7 +2429,7 @@ function renderDash() {
     : 0;
   const circumference = 402.1;
   const offset = circumference - (pct / 100) * circumference;
-  const ringColor = pct <= 80 ? '#4fffb0' : pct <= 100 ? '#ffdb47' : '#ff5757';
+  const ringColor = pct <= 80 ? '#34d399' : pct <= 100 ? '#fbbf24' : '#f87171';
   document.getElementById('ringCircle').style.strokeDashoffset = offset;
   document.getElementById('ringCircle').style.stroke = ringColor;
   document.getElementById('ringPct').textContent = pct + '%';
