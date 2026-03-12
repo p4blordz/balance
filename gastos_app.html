@@ -1215,6 +1215,329 @@ html, body {
   line-height: 1;
 }
 
+/* ── SPLIT MODULE ── */
+.split-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+.split-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+.split-empty-text {
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+.split-group-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 0 16px 12px;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.2s;
+}
+.split-group-card:active { transform: scale(0.98); }
+.split-group-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.split-group-name {
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+.split-group-status {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.split-group-status.active {
+  background: var(--green-dim);
+  color: var(--green);
+}
+.split-group-status.closed {
+  background: var(--muted2);
+  color: var(--muted);
+}
+.split-group-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.split-group-total {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 8px;
+  color: var(--text);
+}
+.split-section-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  padding: 16px 20px 8px;
+  font-weight: 600;
+}
+.split-new-btn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 8px 16px 20px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 2px dashed var(--border);
+  background: none;
+  color: var(--accent);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.split-new-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* Split detail view */
+.split-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--bg);
+  display: none;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.split-detail.open {
+  display: flex;
+}
+.split-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.split-back-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 4px;
+}
+.split-back-btn svg { width: 22px; height: 22px; stroke-width: 2; }
+.split-detail-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex: 1;
+  letter-spacing: -0.02em;
+}
+.split-detail-actions {
+  display: flex;
+  gap: 8px;
+}
+.split-detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 20px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.split-detail-body::-webkit-scrollbar { display: none; }
+
+/* Participant balances */
+.split-balances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+}
+.split-balance-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 120px;
+}
+.split-balance-name {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.split-balance-amount {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.split-balance-amount.positive { color: var(--green); }
+.split-balance-amount.negative { color: var(--red); }
+.split-balance-amount.zero { color: var(--muted); }
+
+/* Settlement summary */
+.split-settlement {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin: 0 16px 12px;
+  padding: 14px;
+}
+.split-settlement-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 0.85rem;
+}
+.split-settlement-arrow {
+  color: var(--accent);
+  font-weight: 600;
+}
+.split-settlement-amount {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Split expense items */
+.split-expense-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.split-expense-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.split-expense-info { flex: 1; min-width: 0; }
+.split-expense-desc {
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.split-expense-meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.split-expense-amount {
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.split-expense-del {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.5;
+  transition: opacity 0.2s, color 0.2s;
+}
+.split-expense-del:hover { opacity: 1; color: var(--red); }
+.split-expense-del svg { width: 16px; height: 16px; stroke-width: 2; }
+
+/* Participant chips in modal */
+.split-participants-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.split-participant-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+.split-participant-remove {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+.split-participant-remove:hover { color: var(--red); }
+
+.split-add-row {
+  display: flex;
+  gap: 8px;
+}
+.split-add-row input {
+  flex: 1;
+}
+.split-add-row button {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 10px;
+  padding: 0 14px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* Custom split fields */
+.split-custom-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.split-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.split-custom-row label {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+.split-custom-row input {
+  width: 100px;
+}
+
+/* Split detail action buttons */
+.split-detail-bottom {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.split-detail-bottom .btn-submit,
+.split-detail-bottom .btn-alt {
+  flex: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -1353,6 +1676,33 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     <div id="histList"></div>
   </div>
 
+  <!-- ══════════ SCREEN: SPLIT / GASTOS COMPARTIDOS ══════════ -->
+  <div class="screen" id="screen-split">
+    <div class="screen-header">
+      <div class="screen-title">Gastos compartidos</div>
+      <div class="screen-sub">Divide gastos de viajes y eventos</div>
+    </div>
+    <div id="splitGroupList"></div>
+    <button class="split-new-btn" type="button" onclick="openSplitGroupModal()">+ Nuevo grupo</button>
+  </div>
+
+  <!-- Split detail overlay -->
+  <div class="split-detail" id="splitDetail">
+    <div class="split-detail-header">
+      <button class="split-back-btn" type="button" onclick="closeSplitDetail()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <div class="split-detail-title" id="splitDetailTitle"></div>
+      <div class="split-detail-actions">
+        <button class="split-back-btn" type="button" onclick="openSplitExpenseModal()" title="Agregar gasto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="split-detail-body" id="splitDetailBody"></div>
+    <div class="split-detail-bottom" id="splitDetailBottom"></div>
+  </div>
+
   <!-- ══════════ SCREEN: CONFIG / BILLETERAS ══════════ -->
   <div class="screen" id="screen-wallet">
     <div class="screen-header">
@@ -1424,6 +1774,10 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     <button class="nav-btn" onclick="showScreen('hist')" id="nav-hist">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M2 12h20"/><path d="M12 2a10 10 0 0 1 0 20A10 10 0 0 1 12 2"/></svg>
       Historial
+    </button>
+    <button class="nav-btn" onclick="showScreen('split')" id="nav-split">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22V8"/><path d="m21 3-9 9"/><path d="M3 3l9 9"/></svg>
+      Dividir
     </button>
     <button class="nav-btn" onclick="showScreen('wallet')" id="nav-wallet">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7a2 2 0 0 1 2-2h14a1 1 0 0 1 1 1v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M17 13h3"/><circle cx="15" cy="13" r="1"/></svg>
@@ -1502,6 +1856,68 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     <button id="importBtn" class="btn-alt" type="button" onclick="openImportFilePicker()">Importar Excel / CSV</button>
     <div class="import-help">Columnas sugeridas: tipo, categoria, descripcion, monto, fecha (o mes + anio).</div>
     <div id="importStatus" class="import-status info"></div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: NUEVO GRUPO SPLIT ══════════ -->
+<div class="modal-overlay" id="splitGroupModalOverlay" onclick="handleSplitGroupOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo grupo</div>
+
+    <div class="field">
+      <label>Nombre del grupo</label>
+      <input type="text" id="splitGroupName" placeholder="Ej: Viaje Bariloche, Cena cumple..." autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label>Participantes (min 2)</label>
+      <div class="split-participants-list" id="splitParticipantsList"></div>
+      <div class="split-add-row">
+        <input type="text" id="splitParticipantInput" placeholder="Nombre" autocomplete="off">
+        <button type="button" onclick="addSplitParticipant()">Agregar</button>
+      </div>
+    </div>
+
+    <button class="btn-submit" type="button" onclick="saveSplitGroup()">Crear grupo</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: NUEVO GASTO SPLIT ══════════ -->
+<div class="modal-overlay" id="splitExpenseModalOverlay" onclick="handleSplitExpenseOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="splitExpenseModalTitle">Agregar gasto</div>
+
+    <div class="field">
+      <label>Descripcion</label>
+      <input type="text" id="splitExpenseDesc" placeholder="Ej: hotel, cena, nafta..." autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label>Monto total ($)</label>
+      <input type="number" id="splitExpenseAmount" placeholder="0" inputmode="decimal" step="any">
+    </div>
+
+    <div class="field">
+      <label>Quien pago</label>
+      <select id="splitExpensePaidBy"></select>
+    </div>
+
+    <div class="field">
+      <label>Division</label>
+      <div class="type-toggle" style="grid-template-columns:1fr 1fr">
+        <button class="type-btn active" data-split="equal" onclick="setSplitMode('equal')">Partes iguales</button>
+        <button class="type-btn" data-split="custom" onclick="setSplitMode('custom')">Personalizado</button>
+      </div>
+    </div>
+
+    <div class="field" id="splitCustomSection" style="display:none">
+      <label>Monto por persona</label>
+      <div class="split-custom-fields" id="splitCustomFields"></div>
+    </div>
+
+    <button class="btn-submit" type="button" onclick="saveSplitExpense()">Guardar gasto</button>
   </div>
 </div>
 
@@ -1736,12 +2152,13 @@ function showScreen(s) {
     renderWalletScreen();
     refreshWalletData();
   }
+  if (s === 'split') renderSplitScreen();
 }
 
 function updateFabVisibilityForScreen(screenId) {
   const fab = document.getElementById('fabBtn');
   if (!fab) return;
-  fab.classList.toggle('hidden', screenId === 'wallet');
+  fab.classList.toggle('hidden', screenId === 'wallet' || screenId === 'split');
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -3641,6 +4058,588 @@ function enqueueOp(op) {
   saveUserQueue(user.id, syncQueue);
 }
 
+// ══════════════════════════════════════════════════
+// SPLIT / GASTOS COMPARTIDOS
+// ══════════════════════════════════════════════════
+let splitGroups = [];
+let splitExpenses = {};  // { groupId: [expenses] }
+let currentSplitGroupId = null;
+let splitTempParticipants = [];
+let splitCurrentMode = 'equal';
+let editingSplitGroupId = null; // for editing group
+
+function splitCacheKey(userId) { return 'gastos_app_split_' + userId; }
+
+function loadSplitCache(userId) {
+  try {
+    var raw = localStorage.getItem(splitCacheKey(userId));
+    if (!raw) return { groups: [], expenses: {} };
+    var parsed = JSON.parse(raw);
+    return parsed || { groups: [], expenses: {} };
+  } catch (e) { return { groups: [], expenses: {} }; }
+}
+
+function saveSplitCache(userId, data) {
+  try { localStorage.setItem(splitCacheKey(userId), JSON.stringify(data)); } catch (e) {}
+}
+
+function saveSplitLocal() {
+  var user = getCurrentUserOrNull();
+  if (!user) return;
+  saveSplitCache(user.id, { groups: splitGroups, expenses: splitExpenses });
+}
+
+async function fetchSplitGroups() {
+  var user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return;
+  try {
+    var res = await withTimeout(window.supabase
+      .from('split_groups')
+      .select('*')
+      .order('created_at', { ascending: false }), 10000);
+    if (res.error) throw res.error;
+    splitGroups = res.data || [];
+    saveSplitLocal();
+  } catch (e) {
+    console.warn('fetchSplitGroups error:', e);
+  }
+}
+
+async function fetchSplitExpenses(groupId) {
+  var user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return;
+  try {
+    var res = await withTimeout(window.supabase
+      .from('split_expenses')
+      .select('*')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: true }), 10000);
+    if (res.error) throw res.error;
+    splitExpenses[groupId] = res.data || [];
+    saveSplitLocal();
+  } catch (e) {
+    console.warn('fetchSplitExpenses error:', e);
+  }
+}
+
+async function insertSplitGroup(group) {
+  var user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return null;
+  try {
+    var res = await withTimeout(window.supabase
+      .from('split_groups')
+      .insert({ ...group, user_id: user.id })
+      .select()
+      .single(), 10000);
+    if (res.error) throw res.error;
+    return res.data;
+  } catch (e) {
+    showToast('Error al crear grupo');
+    console.error('insertSplitGroup:', e);
+    return null;
+  }
+}
+
+async function updateSplitGroup(id, updates) {
+  var user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return;
+  try {
+    await withTimeout(window.supabase
+      .from('split_groups')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id), 10000);
+  } catch (e) {
+    showToast('Error al actualizar grupo');
+    console.error('updateSplitGroup:', e);
+  }
+}
+
+async function deleteSplitGroup(id) {
+  var user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return;
+  if (!confirm('Eliminar este grupo y todos sus gastos?')) return;
+  try {
+    await withTimeout(window.supabase
+      .from('split_groups')
+      .delete()
+      .eq('id', id), 10000);
+    splitGroups = splitGroups.filter(function(g) { return g.id !== id; });
+    delete splitExpenses[id];
+    saveSplitLocal();
+    if (currentSplitGroupId === id) closeSplitDetail();
+    renderSplitScreen();
+    showToast('Grupo eliminado');
+  } catch (e) {
+    showToast('Error al eliminar grupo');
+    console.error('deleteSplitGroup:', e);
+  }
+}
+
+async function insertSplitExpense(expense) {
+  var user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return null;
+  try {
+    var res = await withTimeout(window.supabase
+      .from('split_expenses')
+      .insert({ ...expense, user_id: user.id })
+      .select()
+      .single(), 10000);
+    if (res.error) throw res.error;
+    return res.data;
+  } catch (e) {
+    showToast('Error al guardar gasto');
+    console.error('insertSplitExpense:', e);
+    return null;
+  }
+}
+
+async function deleteSplitExpenseRemote(id, groupId) {
+  var user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return;
+  try {
+    await withTimeout(window.supabase
+      .from('split_expenses')
+      .delete()
+      .eq('id', id), 10000);
+    if (splitExpenses[groupId]) {
+      splitExpenses[groupId] = splitExpenses[groupId].filter(function(e) { return e.id !== id; });
+    }
+    saveSplitLocal();
+    renderSplitDetail(groupId);
+    showToast('Gasto eliminado');
+  } catch (e) {
+    showToast('Error al eliminar gasto');
+    console.error('deleteSplitExpense:', e);
+  }
+}
+
+// ── Balance calculation ──
+function calcSplitBalances(groupId) {
+  var group = splitGroups.find(function(g) { return g.id === groupId; });
+  if (!group) return {};
+  var participants = group.participants || [];
+  var expenses = splitExpenses[groupId] || [];
+  var balances = {};
+  participants.forEach(function(p) { balances[p] = 0; });
+
+  expenses.forEach(function(exp) {
+    var amount = parseFloat(exp.amount) || 0;
+    // The payer gets credit
+    if (balances[exp.paid_by] !== undefined) {
+      balances[exp.paid_by] += amount;
+    }
+    // Each participant owes their share
+    if (exp.split_mode === 'custom' && exp.split_detail) {
+      var detail = typeof exp.split_detail === 'string' ? JSON.parse(exp.split_detail) : exp.split_detail;
+      Object.keys(detail).forEach(function(name) {
+        if (balances[name] !== undefined) {
+          balances[name] -= parseFloat(detail[name]) || 0;
+        }
+      });
+    } else {
+      // Equal split among all participants
+      var share = amount / participants.length;
+      participants.forEach(function(p) {
+        balances[p] -= share;
+      });
+    }
+  });
+  return balances;
+}
+
+function calcSettlements(balances) {
+  var debtors = [];
+  var creditors = [];
+  Object.keys(balances).forEach(function(name) {
+    var val = Math.round(balances[name]);
+    if (val < 0) debtors.push({ name: name, amount: -val });
+    else if (val > 0) creditors.push({ name: name, amount: val });
+  });
+  debtors.sort(function(a, b) { return b.amount - a.amount; });
+  creditors.sort(function(a, b) { return b.amount - a.amount; });
+  var settlements = [];
+  var di = 0, ci = 0;
+  while (di < debtors.length && ci < creditors.length) {
+    var pay = Math.min(debtors[di].amount, creditors[ci].amount);
+    if (pay > 0) {
+      settlements.push({ from: debtors[di].name, to: creditors[ci].name, amount: pay });
+    }
+    debtors[di].amount -= pay;
+    creditors[ci].amount -= pay;
+    if (debtors[di].amount === 0) di++;
+    if (creditors[ci].amount === 0) ci++;
+  }
+  return settlements;
+}
+
+// ── Rendering ──
+function renderSplitScreen() {
+  var container = document.getElementById('splitGroupList');
+  if (!container) return;
+
+  var active = splitGroups.filter(function(g) { return g.status === 'active'; });
+  var closed = splitGroups.filter(function(g) { return g.status === 'closed'; });
+
+  if (splitGroups.length === 0) {
+    container.innerHTML = '<div class="split-empty">' +
+      '<div class="split-empty-icon">&#x2702;</div>' +
+      '<div class="split-empty-text">No hay grupos todavia.<br>Crea uno para empezar a dividir gastos.</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+  if (active.length > 0) {
+    html += '<div class="split-section-label">Activos</div>';
+    active.forEach(function(g) { html += renderSplitGroupCard(g); });
+  }
+  if (closed.length > 0) {
+    html += '<div class="split-section-label">Cerrados</div>';
+    closed.forEach(function(g) { html += renderSplitGroupCard(g); });
+  }
+  container.innerHTML = html;
+}
+
+function renderSplitGroupCard(group) {
+  var participants = group.participants || [];
+  var expenses = splitExpenses[group.id] || [];
+  var total = expenses.reduce(function(s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
+  return '<div class="split-group-card" onclick="openSplitDetail(\'' + group.id + '\')">' +
+    '<div class="split-group-card-header">' +
+      '<div class="split-group-name">' + escHtml(group.name) + '</div>' +
+      '<div class="split-group-status ' + group.status + '">' + (group.status === 'active' ? 'Activo' : 'Cerrado') + '</div>' +
+    '</div>' +
+    '<div class="split-group-meta">' + participants.length + ' participantes</div>' +
+    (total > 0 ? '<div class="split-group-total">Total: ' + fmt(total) + '</div>' : '') +
+  '</div>';
+}
+
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function openSplitDetail(groupId) {
+  currentSplitGroupId = groupId;
+  await fetchSplitExpenses(groupId);
+  renderSplitDetail(groupId);
+  document.getElementById('splitDetail').classList.add('open');
+}
+
+function closeSplitDetail() {
+  currentSplitGroupId = null;
+  document.getElementById('splitDetail').classList.remove('open');
+}
+
+function renderSplitDetail(groupId) {
+  var group = splitGroups.find(function(g) { return g.id === groupId; });
+  if (!group) return;
+
+  document.getElementById('splitDetailTitle').textContent = group.name;
+
+  var expenses = splitExpenses[groupId] || [];
+  var balances = calcSplitBalances(groupId);
+  var settlements = calcSettlements(balances);
+  var participants = group.participants || [];
+
+  var html = '';
+
+  // Balances
+  html += '<div class="split-section-label">Balances</div>';
+  html += '<div class="split-balances">';
+  participants.forEach(function(p) {
+    var val = Math.round(balances[p] || 0);
+    var cls = val > 0 ? 'positive' : val < 0 ? 'negative' : 'zero';
+    var sign = val > 0 ? '+' : '';
+    html += '<div class="split-balance-chip">' +
+      '<div class="split-balance-name">' + escHtml(p) + '</div>' +
+      '<div class="split-balance-amount ' + cls + '">' + sign + fmt(val) + '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+
+  // Settlements
+  if (settlements.length > 0) {
+    html += '<div class="split-section-label">Resumen de deudas</div>';
+    html += '<div class="split-settlement">';
+    settlements.forEach(function(s) {
+      html += '<div class="split-settlement-row">' +
+        '<span>' + escHtml(s.from) + '</span>' +
+        '<span class="split-settlement-arrow">&rarr;</span>' +
+        '<span>' + escHtml(s.to) + '</span>' +
+        '<span class="split-settlement-amount">' + fmt(s.amount) + '</span>' +
+      '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Expense list
+  html += '<div class="split-section-label">Gastos (' + expenses.length + ')</div>';
+  if (expenses.length === 0) {
+    html += '<div class="split-empty"><div class="split-empty-text">Sin gastos todavia. Toca + para agregar.</div></div>';
+  } else {
+    expenses.forEach(function(exp) {
+      var initial = (exp.paid_by || '?')[0].toUpperCase();
+      var splitInfo = exp.split_mode === 'custom' ? 'Personalizado' : 'Partes iguales';
+      html += '<div class="split-expense-item">' +
+        '<div class="split-expense-dot">' + initial + '</div>' +
+        '<div class="split-expense-info">' +
+          '<div class="split-expense-desc">' + escHtml(exp.description) + '</div>' +
+          '<div class="split-expense-meta">Pago ' + escHtml(exp.paid_by) + ' &middot; ' + splitInfo + '</div>' +
+        '</div>' +
+        '<div class="split-expense-amount">' + fmt(parseFloat(exp.amount) || 0) + '</div>' +
+        (group.status === 'active' ? '<button class="split-expense-del" onclick="event.stopPropagation();deleteSplitExpenseRemote(\'' + exp.id + '\',\'' + groupId + '\')" title="Eliminar">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+        '</button>' : '') +
+      '</div>';
+    });
+  }
+
+  document.getElementById('splitDetailBody').innerHTML = html;
+
+  // Bottom actions
+  var bottomHtml = '';
+  if (group.status === 'active') {
+    bottomHtml = '<button class="btn-submit" type="button" onclick="openSplitExpenseModal()">Agregar gasto</button>' +
+      '<button class="btn-alt" type="button" onclick="closeSplitGroupAction(\'' + groupId + '\')">Cerrar grupo</button>';
+  } else {
+    bottomHtml = '<button class="btn-alt" type="button" onclick="reopenSplitGroup(\'' + groupId + '\')">Reabrir grupo</button>' +
+      '<button class="btn-alt" type="button" style="color:var(--red)" onclick="deleteSplitGroup(\'' + groupId + '\')">Eliminar grupo</button>';
+  }
+  document.getElementById('splitDetailBottom').innerHTML = bottomHtml;
+}
+
+// ── Group modal ──
+function openSplitGroupModal(editId) {
+  editingSplitGroupId = editId || null;
+  splitTempParticipants = [];
+  document.getElementById('splitGroupName').value = '';
+  if (editId) {
+    var g = splitGroups.find(function(gr) { return gr.id === editId; });
+    if (g) {
+      document.getElementById('splitGroupName').value = g.name;
+      splitTempParticipants = (g.participants || []).slice();
+    }
+  }
+  renderSplitParticipants();
+  document.getElementById('splitGroupModalOverlay').classList.add('open');
+}
+
+function closeSplitGroupModal() {
+  document.getElementById('splitGroupModalOverlay').classList.remove('open');
+}
+
+function handleSplitGroupOverlayClick(e) {
+  if (e.target === document.getElementById('splitGroupModalOverlay')) closeSplitGroupModal();
+}
+
+function addSplitParticipant() {
+  var input = document.getElementById('splitParticipantInput');
+  var name = input.value.trim();
+  if (!name) return;
+  if (splitTempParticipants.length >= 10) {
+    showToast('Maximo 10 participantes');
+    return;
+  }
+  if (splitTempParticipants.indexOf(name) !== -1) {
+    showToast('Ya existe ese participante');
+    return;
+  }
+  splitTempParticipants.push(name);
+  input.value = '';
+  renderSplitParticipants();
+  input.focus();
+}
+
+function removeSplitParticipant(index) {
+  splitTempParticipants.splice(index, 1);
+  renderSplitParticipants();
+}
+
+function renderSplitParticipants() {
+  var container = document.getElementById('splitParticipantsList');
+  container.innerHTML = splitTempParticipants.map(function(p, i) {
+    return '<span class="split-participant-chip">' + escHtml(p) +
+      '<button class="split-participant-remove" type="button" onclick="removeSplitParticipant(' + i + ')">&times;</button>' +
+    '</span>';
+  }).join('');
+}
+
+async function saveSplitGroup() {
+  var name = document.getElementById('splitGroupName').value.trim();
+  if (!name) { showToast('Ingresa un nombre'); return; }
+  if (splitTempParticipants.length < 2) { showToast('Agrega al menos 2 participantes'); return; }
+
+  if (editingSplitGroupId) {
+    await updateSplitGroup(editingSplitGroupId, { name: name, participants: splitTempParticipants });
+    var g = splitGroups.find(function(gr) { return gr.id === editingSplitGroupId; });
+    if (g) { g.name = name; g.participants = splitTempParticipants; }
+    saveSplitLocal();
+    if (currentSplitGroupId === editingSplitGroupId) renderSplitDetail(editingSplitGroupId);
+  } else {
+    var created = await insertSplitGroup({ name: name, participants: splitTempParticipants });
+    if (created) {
+      splitGroups.unshift(created);
+      splitExpenses[created.id] = [];
+      saveSplitLocal();
+    }
+  }
+  closeSplitGroupModal();
+  renderSplitScreen();
+  showToast(editingSplitGroupId ? 'Grupo actualizado' : 'Grupo creado');
+}
+
+// ── Expense modal ──
+function openSplitExpenseModal() {
+  if (!currentSplitGroupId) return;
+  var group = splitGroups.find(function(g) { return g.id === currentSplitGroupId; });
+  if (!group) return;
+  splitCurrentMode = 'equal';
+
+  document.getElementById('splitExpenseDesc').value = '';
+  document.getElementById('splitExpenseAmount').value = '';
+
+  // Populate paid_by select
+  var select = document.getElementById('splitExpensePaidBy');
+  select.innerHTML = (group.participants || []).map(function(p) {
+    return '<option value="' + escHtml(p) + '">' + escHtml(p) + '</option>';
+  }).join('');
+
+  // Reset split mode toggle
+  document.querySelectorAll('#splitExpenseModalOverlay .type-btn').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-split') === 'equal');
+  });
+  document.getElementById('splitCustomSection').style.display = 'none';
+  renderSplitCustomFields(group.participants);
+
+  document.getElementById('splitExpenseModalOverlay').classList.add('open');
+}
+
+function closeSplitExpenseModal() {
+  document.getElementById('splitExpenseModalOverlay').classList.remove('open');
+}
+
+function handleSplitExpenseOverlayClick(e) {
+  if (e.target === document.getElementById('splitExpenseModalOverlay')) closeSplitExpenseModal();
+}
+
+function setSplitMode(mode) {
+  splitCurrentMode = mode;
+  document.querySelectorAll('#splitExpenseModalOverlay .type-btn').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-split') === mode);
+  });
+  document.getElementById('splitCustomSection').style.display = mode === 'custom' ? 'block' : 'none';
+}
+
+function renderSplitCustomFields(participants) {
+  var container = document.getElementById('splitCustomFields');
+  container.innerHTML = (participants || []).map(function(p) {
+    return '<div class="split-custom-row">' +
+      '<label>' + escHtml(p) + '</label>' +
+      '<input type="number" class="split-custom-amount" data-participant="' + escHtml(p) + '" placeholder="0" inputmode="decimal" step="any">' +
+    '</div>';
+  }).join('');
+}
+
+async function saveSplitExpense() {
+  if (!currentSplitGroupId) return;
+  var desc = document.getElementById('splitExpenseDesc').value.trim();
+  var amount = parseFloat(document.getElementById('splitExpenseAmount').value);
+  var paidBy = document.getElementById('splitExpensePaidBy').value;
+
+  if (!desc) { showToast('Ingresa una descripcion'); return; }
+  if (!amount || amount <= 0) { showToast('Ingresa un monto valido'); return; }
+  if (!paidBy) { showToast('Selecciona quien pago'); return; }
+
+  var splitDetail = null;
+  if (splitCurrentMode === 'custom') {
+    splitDetail = {};
+    var total = 0;
+    document.querySelectorAll('.split-custom-amount').forEach(function(input) {
+      var val = parseFloat(input.value) || 0;
+      splitDetail[input.getAttribute('data-participant')] = val;
+      total += val;
+    });
+    if (Math.abs(total - amount) > 1) {
+      showToast('La suma personalizada ($' + Math.round(total).toLocaleString('es-AR') + ') no coincide con el total ($' + Math.round(amount).toLocaleString('es-AR') + ')');
+      return;
+    }
+  }
+
+  var expense = {
+    group_id: currentSplitGroupId,
+    description: desc,
+    amount: amount,
+    paid_by: paidBy,
+    split_mode: splitCurrentMode,
+    split_detail: splitDetail
+  };
+
+  var created = await insertSplitExpense(expense);
+  if (created) {
+    if (!splitExpenses[currentSplitGroupId]) splitExpenses[currentSplitGroupId] = [];
+    splitExpenses[currentSplitGroupId].push(created);
+    saveSplitLocal();
+    renderSplitDetail(currentSplitGroupId);
+    renderSplitScreen();
+    closeSplitExpenseModal();
+    showToast('Gasto agregado');
+  }
+}
+
+// ── Group actions ──
+async function closeSplitGroupAction(groupId) {
+  if (!confirm('Cerrar este grupo? Podras reabrirlo despues.')) return;
+  await updateSplitGroup(groupId, { status: 'closed' });
+  var g = splitGroups.find(function(gr) { return gr.id === groupId; });
+  if (g) g.status = 'closed';
+  saveSplitLocal();
+  renderSplitDetail(groupId);
+  renderSplitScreen();
+  showToast('Grupo cerrado');
+}
+
+async function reopenSplitGroup(groupId) {
+  await updateSplitGroup(groupId, { status: 'active' });
+  var g = splitGroups.find(function(gr) { return gr.id === groupId; });
+  if (g) g.status = 'active';
+  saveSplitLocal();
+  renderSplitDetail(groupId);
+  renderSplitScreen();
+  showToast('Grupo reabierto');
+}
+
+// ── Init split data ──
+async function initSplitModule() {
+  var user = getCurrentUserOrNull();
+  if (!user) return;
+  var cached = loadSplitCache(user.id);
+  splitGroups = cached.groups || [];
+  splitExpenses = cached.expenses || {};
+  renderSplitScreen();
+  try {
+    await fetchSplitGroups();
+    // Fetch expenses for all groups
+    for (var i = 0; i < splitGroups.length; i++) {
+      await fetchSplitExpenses(splitGroups[i].id);
+    }
+    renderSplitScreen();
+  } catch (e) {
+    console.warn('initSplitModule error:', e);
+  }
+}
+
+// handle enter key in participant input
+document.addEventListener('DOMContentLoaded', function() {
+  var pInput = document.getElementById('splitParticipantInput');
+  if (pInput) {
+    pInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); addSplitParticipant(); }
+    });
+  }
+});
+
 function withTimeout(promise, ms) {
   let timer;
   return Promise.race([
@@ -3827,6 +4826,8 @@ async function renderForCurrentState() {
     showToast('Modo offline: usando cache local');
     try { await refreshWalletData(); } catch (e2) { /* ignore */ }
   }
+  // Init split module in background (non-blocking)
+  initSplitModule().catch(function(e) { console.warn('initSplit error:', e); });
 }
 
 async function logout() {
