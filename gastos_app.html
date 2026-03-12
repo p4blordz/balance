@@ -1814,10 +1814,10 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     <!-- Type -->
     <div class="type-toggle" style="grid-template-columns:1fr 1fr">
       <button class="type-btn active" data-type="gasto" onclick="setType('gasto')">Gasto</button>
-      <button class="type-btn" data-type="ingreso_mes" onclick="setType('ingreso_mes')">Ingreso mes</button>
+      <button class="type-btn" data-type="ingreso_mes" onclick="setType('ingreso_mes')">Ingreso</button>
     </div>
     <div class="type-toggle" style="grid-template-columns:1fr 1fr;margin-top:-6px">
-      <button class="type-btn" data-type="ahorro_in" onclick="setType('ahorro_in')">M. Guardado</button>
+      <button class="type-btn" data-type="ahorro_in" onclick="setType('ahorro_in')">Ahorro</button>
       <button class="type-btn" data-type="ahorro_mov" onclick="setType('ahorro_mov')">Uso de Ahorros</button>
     </div>
 
@@ -2390,7 +2390,7 @@ function renderHome() {
       amountSign = isIn ? '+' : '';
     }
 
-    const typeLabels = { gasto: cat.label||'Gasto', ingreso_mes:'Ingreso mes', ahorro_in:'M. Guardado', ahorro_mov:'Uso de Ahorros', ahorro_gasto: cat.label||'Gasto Ahorros' };
+    const typeLabels = { gasto: cat.label||'Gasto', ingreso_mes:'Ingreso', ahorro_in:'Ahorro', ahorro_mov:'Uso de Ahorros', ahorro_gasto: cat.label||'Uso de Ahorros' };
     const catLabel = typeLabels[m.type] || m.type;
 
     return `
