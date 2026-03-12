@@ -512,7 +512,6 @@ html, body {
 .type-btn.active[data-type="ingreso_mes"] { background: rgba(96,165,250,0.14); border-color: var(--blue); color: var(--blue); }
 .type-btn.active[data-type="ahorro_in"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .type-btn.active[data-type="ahorro_mov"] { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-.type-btn.active[data-type="ahorro_gasto"] { background: rgba(251,191,36,0.12); border-color: #fbbf24; color: #fbbf24; }
 .type-btn.active[data-split="equal"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .type-btn.active[data-split="custom"] { background: rgba(96,165,250,0.14); border-color: var(--blue); color: var(--blue); }
 .type-btn.active[data-splitunit="percent"] { background: var(--green-dim); border-color: var(--green); color: var(--green); }
@@ -1819,10 +1818,7 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     </div>
     <div class="type-toggle" style="grid-template-columns:1fr 1fr;margin-top:-6px">
       <button class="type-btn" data-type="ahorro_in" onclick="setType('ahorro_in')">M. Guardado</button>
-      <button class="type-btn" data-type="ahorro_mov" onclick="setType('ahorro_mov')">Mov. Ahorros</button>
-    </div>
-    <div class="type-toggle" style="grid-template-columns:1fr;margin-top:-6px">
-      <button class="type-btn" data-type="ahorro_gasto" onclick="setType('ahorro_gasto')">Gasto de Ahorros</button>
+      <button class="type-btn" data-type="ahorro_mov" onclick="setType('ahorro_mov')">Uso de Ahorros</button>
     </div>
 
     <!-- Category (shown only for gasto) -->
@@ -2258,11 +2254,11 @@ function getMonthStats(mes, anio) {
   const gasto_total_real = gasto + ahorro_mov_out + ahorro_gasto;
   const bal_total_real = ingreso_total_real - gasto_total_real;
 
-  // Por categoria (gasto + ahorro_gasto)
+  // Por categoria (gasto + ahorro_gasto + ahorro_mov negativos con cat)
   const byCat = {};
   CATS.forEach(c => byCat[c.id] = 0);
-  movs.filter(m => m.type === 'gasto' || m.type === 'ahorro_gasto').forEach(m => {
-    byCat[m.cat] = (byCat[m.cat] || 0) + m.monto;
+  movs.filter(m => m.type === 'gasto' || m.type === 'ahorro_gasto' || (m.type === 'ahorro_mov' && m.monto < 0 && m.cat)).forEach(m => {
+    byCat[m.cat] = (byCat[m.cat] || 0) + Math.abs(m.monto);
   });
 
   return { ingreso_mes, gasto, bal_gastos, ahorro_in, ahorro_mov, ahorro_gasto, bal_ahorros, byCat,
@@ -2383,14 +2379,18 @@ function renderHome() {
       amountClass = 'style="color:var(--accent)"';
       amountSign = '+';
     } else {
-      // ahorro_mov â€” positive=entrada, negative=salida
+      // ahorro_mov — positive=entrada, negative=salida
       const isIn = m.monto >= 0;
-      dot = `<div class="tx-dot" style="background:rgba(255,255,255,0.05)">${isIn ? '+' : '-'}</div>`;
-      amountClass = isIn ? 'style="color:var(--green)"' : 'style="color:var(--red)"';
+      if (!isIn && m.cat && cat.icon) {
+        dot = `<div class=”tx-dot” style=”background:${cat.color}22”>${cat.icon}</div>`;
+      } else {
+        dot = `<div class=”tx-dot” style=”background:rgba(255,255,255,0.05)”>${isIn ? '+' : '-'}</div>`;
+      }
+      amountClass = isIn ? 'style=”color:var(--green)”' : 'style=”color:var(--red)”';
       amountSign = isIn ? '+' : '';
     }
 
-    const typeLabels = { gasto: cat.label||'Gasto', ingreso_mes:'Ingreso mes', ahorro_in:'M. Guardado', ahorro_mov:'Mov. Ahorros', ahorro_gasto: cat.label||'Gasto Ahorros' };
+    const typeLabels = { gasto: cat.label||'Gasto', ingreso_mes:'Ingreso mes', ahorro_in:'M. Guardado', ahorro_mov:'Uso de Ahorros', ahorro_gasto: cat.label||'Gasto Ahorros' };
     const catLabel = typeLabels[m.type] || m.type;
 
     return `
@@ -2472,7 +2472,7 @@ function renderDash() {
   document.getElementById('catBreakdown').innerHTML = CATS.map(c => {
     const val = stats.byCat[c.id] || 0;
     const barW = Math.round((val / maxGasto) * 100);
-    const items = movs.filter(m => (m.type === 'gasto' || m.type === 'ahorro_gasto') && m.cat === c.id);
+    const items = movs.filter(m => (m.type === 'gasto' || m.type === 'ahorro_gasto' || (m.type === 'ahorro_mov' && m.monto < 0 && m.cat)) && m.cat === c.id);
     const detailHTML = items.length === 0
       ? `<div style="padding:6px 12px;color:var(--muted);font-size:0.72rem">Sin gastos</div>`
       : items.map(m => `
@@ -2590,15 +2590,14 @@ function setType(t) {
   selectedType = t;
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.type-btn[data-type="${t}"]`).classList.add('active');
-  document.getElementById('catSection').style.display = (t === 'gasto' || t === 'ahorro_gasto') ? 'block' : 'none';
+  document.getElementById('catSection').style.display = (t === 'gasto') ? 'block' : 'none';
   // Placeholder dinámico según tipo
   var descInput = document.getElementById('fDesc');
   var placeholders = {
     gasto: 'Ej: supermercado, nafta, delivery...',
     ingreso_mes: 'Ej: sueldo, freelance, venta...',
     ahorro_in: 'Ej: ahorro marzo, plazo fijo...',
-    ahorro_mov: 'Ej: transferencia, retiro...',
-    ahorro_gasto: 'Ej: cuota auto, emergencia...'
+    ahorro_mov: 'Ej: cuota auto, retiro, transferencia...'
   };
   descInput.placeholder = placeholders[t] || 'Descripcion';
   // for ahorro_mov allow negative amounts (salidas)
@@ -2610,6 +2609,14 @@ function setType(t) {
     montoInput.placeholder = '0';
     montoInput.step = 'any';
   }
+  updateAhorroMovCatVisibility();
+}
+
+// Show/hide category for ahorro_mov based on negative amount (egreso)
+function updateAhorroMovCatVisibility() {
+  if (selectedType !== 'ahorro_mov') return;
+  var monto = parseFloat(document.getElementById('fMonto').value) || 0;
+  document.getElementById('catSection').style.display = monto < 0 ? 'block' : 'none';
 }
 
 function openModal() {
@@ -2620,6 +2627,7 @@ function openModal() {
   document.getElementById('fAnio').value = activeMonth.anio;
   document.getElementById('fDesc').value = '';
   document.getElementById('fMonto').value = '';
+  document.getElementById('fMonto').oninput = updateAhorroMovCatVisibility;
   setType('gasto');
   document.getElementById('modalOverlay').classList.add('open');
   setTimeout(() => document.getElementById('fDesc').focus(), 350);
@@ -3413,7 +3421,8 @@ async function saveMovement() {
 
   if (!Number.isFinite(monto) || (selectedType === 'ahorro_mov' ? monto === 0 : monto <= 0)) { showToast('Ingresa un monto valido'); return; }
   if (!mes || !anio) { showToast('Completa mes y anio'); return; }
-  if ((selectedType === 'gasto' || selectedType === 'ahorro_gasto') && !selectedCat) { showToast('Selecciona una categoria'); return; }
+  var needsCat = selectedType === 'gasto' || (selectedType === 'ahorro_mov' && monto < 0);
+  if (needsCat && !selectedCat) { showToast('Selecciona una categoria'); return; }
 
   const isEditing = !!editingMovId;
 
@@ -3423,7 +3432,7 @@ async function saveMovement() {
     const updated = {
       ...db.movements[idx],
       type: selectedType,
-      cat: (selectedType === 'gasto' || selectedType === 'ahorro_gasto') ? selectedCat : null,
+      cat: (selectedType === 'gasto' || (selectedType === 'ahorro_mov' && monto < 0)) ? selectedCat : null,
       desc: desc || null,
       monto: selectedType === 'ahorro_mov' ? monto : Math.abs(monto),
       mes,
@@ -3445,7 +3454,7 @@ async function saveMovement() {
   } else {
     const mov = {
       type: selectedType,
-      cat: (selectedType === 'gasto' || selectedType === 'ahorro_gasto') ? selectedCat : null,
+      cat: (selectedType === 'gasto' || (selectedType === 'ahorro_mov' && monto < 0)) ? selectedCat : null,
       desc: desc || null,
       monto: selectedType === 'ahorro_mov' ? monto : Math.abs(monto),
       mes,
