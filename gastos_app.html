@@ -14,8 +14,8 @@
   --card: #1e2023;
   --card2: #262a2d;
   --border: #333840;
-  --accent: #3abff8;
-  --accent-dim: rgba(58,191,248,0.12);
+  --accent: #e8ff47;
+  --accent-dim: rgba(232,255,71,0.12);
   --red: #ff6b6b;
   --red-dim: rgba(255,107,107,0.12);
   --green: #34d399;
@@ -31,7 +31,7 @@
   --cat-impuestos: #a78bfa;
   --cat-moto: #fbbf24;
   --cat-casa: #f87171;
-  --cat-ingreso: #3abff8;
+  --cat-ingreso: #e8ff47;
   --cat-extra: #22d3ee;
   --glass: rgba(255,255,255,0.045);
   --shadow-soft: 0 12px 30px rgba(0,0,0,0.28);
@@ -44,8 +44,8 @@ html, body {
   height: 100%;
   font-family: 'Outfit', sans-serif;
   background:
-    radial-gradient(1300px 500px at -10% -20%, rgba(58,191,248,0.10), transparent 55%),
-    radial-gradient(1200px 460px at 110% -25%, rgba(58,191,248,0.06), transparent 55%),
+    radial-gradient(1300px 500px at -10% -20%, rgba(232,255,71,0.10), transparent 55%),
+    radial-gradient(1200px 460px at 110% -25%, rgba(232,255,71,0.06), transparent 55%),
     linear-gradient(180deg, #141617 0%, #161819 35%, #181c1f 100%);
   color: var(--text);
   overflow-x: hidden;
@@ -242,8 +242,8 @@ html, body {
 .month-chip.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #ffffff;
-  box-shadow: 0 10px 20px rgba(58,191,248,0.24);
+  color: #161819;
+  box-shadow: 0 10px 20px rgba(232,255,71,0.24);
 }
 
 .period-tools {
@@ -371,8 +371,8 @@ html, body {
   height: 50px;
   padding: 0 18px;
   border-radius: 999px;
-  background: linear-gradient(145deg, #56ccf9, #2b9de8);
-  color: #ffffff;
+  background: linear-gradient(145deg, #f2ff6b, #d9ff2f);
+  color: #161819;
   border: none;
   font-size: 0.72rem;
   font-weight: 600;
@@ -383,7 +383,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 14px 34px rgba(58,191,248,0.34), 0 4px 10px rgba(0,0,0,0.35);
+  box-shadow: 0 14px 34px rgba(232,255,71,0.30), 0 4px 10px rgba(0,0,0,0.30);
   transition: transform 0.2s, box-shadow 0.2s;
   z-index: 99;
 }
@@ -477,7 +477,7 @@ html, body {
 }
 .field input:focus, .field select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(58,191,248,0.15);
+  box-shadow: 0 0 0 3px rgba(232,255,71,0.15);
 }
 
 .field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555870' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
@@ -558,8 +558,8 @@ html, body {
   width: 100%;
   padding: 16px;
   border-radius: 14px;
-  background: linear-gradient(145deg, #56ccf9, #2b9de8);
-  color: #ffffff;
+  background: linear-gradient(145deg, #f2ff6b, #d9ff2f);
+  color: #161819;
   font-family: 'Outfit', sans-serif;
   font-size: 1rem;
   font-weight: 700;
@@ -568,7 +568,7 @@ html, body {
   margin-top: 4px;
   transition: transform 0.2s, box-shadow 0.2s;
   letter-spacing: -0.01em;
-  box-shadow: 0 12px 26px rgba(58,191,248,0.24);
+  box-shadow: 0 12px 26px rgba(232,255,71,0.24);
 }
 .btn-submit:hover { transform: translateY(-1px); }
 .btn-submit:active { transform: scale(0.97); }
@@ -895,7 +895,7 @@ html, body {
   font-weight: 600;
 }
 .badge-ingreso { background: rgba(79,255,176,0.1); color: var(--green); }
-.badge-extra   { background: rgba(58,191,248,0.1);  color: var(--accent); }
+.badge-extra   { background: rgba(232,255,71,0.1);  color: var(--accent); }
 .income-item-amt {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.78rem;
@@ -1055,8 +1055,8 @@ html, body {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.68rem;
   color: var(--accent);
-  background: rgba(58,191,248,0.1);
-  border: 1px solid rgba(58,191,248,0.3);
+  background: rgba(232,255,71,0.1);
+  border: 1px solid rgba(232,255,71,0.3);
 }
 .wallet-empty {
   padding: 12px;
@@ -1099,7 +1099,7 @@ html, body {
   padding: 24px;
   background:
     radial-gradient(1200px 450px at 10% -20%, rgba(96,165,250,0.1), transparent 50%),
-    radial-gradient(1200px 450px at 90% -20%, rgba(58,191,248,0.08), transparent 50%),
+    radial-gradient(1200px 450px at 90% -20%, rgba(232,255,71,0.08), transparent 50%),
     var(--bg);
 }
 
@@ -1145,7 +1145,7 @@ html, body {
 }
 
 .auth-toggle button.active {
-  color: #ffffff;
+  color: #161819;
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -1170,14 +1170,14 @@ html, body {
 .auth-submit {
   border: none;
   border-radius: 10px;
-  background: linear-gradient(145deg, #56ccf9, #2b9de8);
-  color: #ffffff;
+  background: linear-gradient(145deg, #f2ff6b, #d9ff2f);
+  color: #161819;
   padding: 12px;
   font-family: 'Outfit', sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 20px rgba(58,191,248,0.25);
+  box-shadow: 0 10px 20px rgba(232,255,71,0.25);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .auth-submit:hover { transform: translateY(-1px); }
@@ -1643,7 +1643,7 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
       <div class="balance-ring">
         <svg viewBox="0 0 160 160">
           <circle cx="80" cy="80" r="64" fill="none" stroke="#262a2d" stroke-width="14"/>
-          <circle id="ringCircle" cx="80" cy="80" r="64" fill="none" stroke="#3abff8" stroke-width="14"
+          <circle id="ringCircle" cx="80" cy="80" r="64" fill="none" stroke="#e8ff47" stroke-width="14"
             stroke-dasharray="402.1" stroke-dashoffset="402.1"
             stroke-linecap="round"/>
         </svg>
