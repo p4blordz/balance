@@ -516,6 +516,7 @@ html, body {
 .type-btn.active[data-split="custom"] { background: rgba(96,165,250,0.14); border-color: var(--blue); color: var(--blue); }
 .type-btn.active[data-splitunit="percent"] { background: var(--green-dim); border-color: var(--green); color: var(--green); }
 .type-btn.active[data-splitunit="amount"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.type-btn.active[data-currency] { background: rgba(96,165,250,0.14); border-color: var(--blue); color: var(--blue); }
 .split-custom-hint {
   font-size: 0.72rem;
   color: var(--muted);
@@ -1424,6 +1425,10 @@ html, body {
   padding: 12px 16px;
   gap: 12px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+.split-expense-item:active {
+  background: rgba(255,255,255,0.03);
 }
 .split-expense-dot {
   width: 36px;
@@ -1917,8 +1922,16 @@ window.setAuthMode = window.setAuthMode || function setAuthModeFallback(mode) {
     </div>
 
     <div class="field">
-      <label>Monto total ($)</label>
-      <input type="number" id="splitExpenseAmount" placeholder="0" inputmode="decimal" step="any">
+      <label>Monto total</label>
+      <div style="display:flex;gap:8px;align-items:stretch">
+        <input type="number" id="splitExpenseAmount" placeholder="0" inputmode="decimal" step="any" style="flex:1">
+        <div class="type-toggle" id="splitCurrencyToggle" style="grid-template-columns:repeat(4,1fr);margin-bottom:0;flex:0 0 auto;gap:4px">
+          <button class="type-btn active" type="button" data-currency="ARS" onclick="setSplitCurrency('ARS')" style="padding:11px 8px;font-size:0.68rem">ARS</button>
+          <button class="type-btn" type="button" data-currency="USD" onclick="setSplitCurrency('USD')" style="padding:11px 8px;font-size:0.68rem">USD</button>
+          <button class="type-btn" type="button" data-currency="EUR" onclick="setSplitCurrency('EUR')" style="padding:11px 8px;font-size:0.68rem">EUR</button>
+          <button class="type-btn" type="button" data-currency="BRL" onclick="setSplitCurrency('BRL')" style="padding:11px 8px;font-size:0.68rem">BRL</button>
+        </div>
+      </div>
     </div>
 
     <div class="field">
@@ -2277,6 +2290,21 @@ const fmt = function(v) {
   if (n === Math.floor(n)) return '$' + Math.round(n).toLocaleString('es-AR');
   return '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
+
+var SPLIT_CURRENCIES = [
+  { code: 'ARS', symbol: '$', label: 'ARS' },
+  { code: 'USD', symbol: 'US$', label: 'USD' },
+  { code: 'EUR', symbol: '\u20AC', label: 'EUR' },
+  { code: 'BRL', symbol: 'R$', label: 'BRL' }
+];
+
+function fmtCurrency(v, currency) {
+  var n = Number(v) || 0;
+  var cur = SPLIT_CURRENCIES.find(function(c) { return c.code === currency; });
+  var sym = cur ? cur.symbol : '$';
+  if (n === Math.floor(n)) return sym + Math.round(n).toLocaleString('es-AR');
+  return sym + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 function renderAll() {
   renderMonthBars();
@@ -4123,6 +4151,8 @@ let splitCurrentMode = 'equal';
 let splitGuestMode = false;
 let splitCurrentUnit = 'percent'; // 'percent' or 'amount'
 let editingSplitGroupId = null; // for editing group
+let editingSplitExpenseId = null; // for editing expense
+let splitCurrentCurrency = 'ARS';
 
 function splitCacheKey(userId) { return 'gastos_app_split_' + userId; }
 
@@ -4282,6 +4312,25 @@ async function insertSplitExpense(expense) {
   }
 }
 
+async function updateSplitExpense(id, updates) {
+  var user = getCurrentUserOrNull();
+  if (!user || !window.supabase) return null;
+  try {
+    var res = await withTimeout(window.supabase
+      .from('split_expenses')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single(), 10000);
+    if (res.error) throw res.error;
+    return res.data;
+  } catch (e) {
+    showToast('Error al actualizar gasto');
+    console.error('updateSplitExpense:', e);
+    return null;
+  }
+}
+
 async function deleteSplitExpenseRemote(id, groupId) {
   var user = getCurrentUserOrNull();
   if (!user || !window.supabase) return;
@@ -4308,11 +4357,21 @@ function calcSplitBalances(groupId) {
   if (!group) return {};
   var participants = group.participants || [];
   var expenses = splitExpenses[groupId] || [];
-  var balances = {};
-  participants.forEach(function(p) { balances[p] = 0; });
+
+  // Group balances by currency
+  var balancesByCurrency = {};
 
   expenses.forEach(function(exp) {
+    var currency = exp.currency || 'ARS';
     var amount = parseFloat(exp.amount) || 0;
+
+    if (!balancesByCurrency[currency]) {
+      balancesByCurrency[currency] = {};
+      participants.forEach(function(p) { balancesByCurrency[currency][p] = 0; });
+    }
+
+    var balances = balancesByCurrency[currency];
+
     // The payer gets credit
     if (balances[exp.paid_by] !== undefined) {
       balances[exp.paid_by] += amount;
@@ -4333,7 +4392,7 @@ function calcSplitBalances(groupId) {
       });
     }
   });
-  return balances;
+  return balancesByCurrency;
 }
 
 function calcSettlements(balances) {
@@ -4361,13 +4420,24 @@ function calcSettlements(balances) {
   return settlements;
 }
 
+function calcAllSettlements(balancesByCurrency) {
+  var result = {};
+  Object.keys(balancesByCurrency).forEach(function(currency) {
+    var settlements = calcSettlements(balancesByCurrency[currency]);
+    if (settlements.length > 0) {
+      result[currency] = settlements;
+    }
+  });
+  return result;
+}
+
 function formatSplitInfo(exp, participants) {
   var amount = parseFloat(exp.amount) || 0;
   if (exp.split_mode !== 'custom' || !exp.split_detail) {
     // Equal split
     var n = participants.length || 1;
     var each = amount / n;
-    return 'Partes iguales (' + fmt(each) + ' c/u)';
+    return 'Partes iguales (' + fmtCurrency(each, exp.currency || 'ARS') + ' c/u)';
   }
   var detail = typeof exp.split_detail === 'string' ? JSON.parse(exp.split_detail) : exp.split_detail;
   var parts = [];
@@ -4411,14 +4481,21 @@ function renderSplitScreen() {
 function renderSplitGroupCard(group) {
   var participants = group.participants || [];
   var expenses = splitExpenses[group.id] || [];
-  var total = expenses.reduce(function(s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
+  var totals = {};
+  expenses.forEach(function(e) {
+    var cur = e.currency || 'ARS';
+    totals[cur] = (totals[cur] || 0) + (parseFloat(e.amount) || 0);
+  });
+  var totalStr = Object.keys(totals).map(function(cur) {
+    return fmtCurrency(totals[cur], cur);
+  }).join(' | ');
   return '<div class="split-group-card" onclick="openSplitDetail(\'' + group.id + '\')">' +
     '<div class="split-group-card-header">' +
       '<div class="split-group-name">' + escHtml(group.name) + '</div>' +
       '<div class="split-group-status ' + group.status + '">' + (group.status === 'active' ? 'Activo' : 'Cerrado') + '</div>' +
     '</div>' +
     '<div class="split-group-meta">' + participants.length + ' participantes</div>' +
-    (total > 0 ? '<div class="split-group-total">Total: ' + fmt(total) + '</div>' : '') +
+    (totalStr ? '<div class="split-group-total">Total: ' + totalStr + '</div>' : '') +
   '</div>';
 }
 
@@ -4447,19 +4524,22 @@ function renderSplitDetail(groupId) {
   document.getElementById('splitDetailTitle').textContent = group.name;
 
   var expenses = splitExpenses[groupId] || [];
-  var balances = calcSplitBalances(groupId);
-  var settlements = calcSettlements(balances);
+  var balancesByCurrency = calcSplitBalances(groupId);
+  var allSettlements = calcAllSettlements(balancesByCurrency);
   var participants = group.participants || [];
-  var totalGastos = expenses.reduce(function(s, e) { return s + (parseFloat(e.amount) || 0); }, 0);
+  var currencies = Object.keys(balancesByCurrency);
 
-  // Calculate how much each person paid in total
-  var paidByPerson = {};
-  participants.forEach(function(p) { paidByPerson[p] = 0; });
-  expenses.forEach(function(exp) {
-    if (paidByPerson[exp.paid_by] !== undefined) {
-      paidByPerson[exp.paid_by] += parseFloat(exp.amount) || 0;
-    }
+  // Totals per currency
+  var totalsByCurrency = {};
+  expenses.forEach(function(e) {
+    var cur = e.currency || 'ARS';
+    totalsByCurrency[cur] = (totalsByCurrency[cur] || 0) + (parseFloat(e.amount) || 0);
   });
+  var totalDisplay = Object.keys(totalsByCurrency).map(function(cur) {
+    return fmtCurrency(totalsByCurrency[cur], cur);
+  }).join(' + ');
+
+  var hasAnySettlement = Object.keys(allSettlements).length > 0;
 
   var html = '';
 
@@ -4467,7 +4547,7 @@ function renderSplitDetail(groupId) {
     // ── LIQUIDACIÓN FINAL ──
     html += '<div class="split-settlement" style="margin:16px 16px 0;text-align:center;padding:20px">' +
       '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px">Grupo cerrado</div>' +
-      '<div style="font-size:1.6rem;font-weight:700;color:var(--accent)">' + fmt(totalGastos) + '</div>' +
+      '<div style="font-size:1.6rem;font-weight:700;color:var(--accent)">' + (totalDisplay || '$0') + '</div>' +
       '<div style="font-size:0.78rem;color:var(--muted);margin-top:2px">' + expenses.length + ' gastos en total</div>' +
     '</div>';
 
@@ -4475,25 +4555,35 @@ function renderSplitDetail(groupId) {
     html += '<div class="split-section-label">Cuanto pago cada uno</div>';
     html += '<div class="split-balances">';
     participants.forEach(function(p) {
-      var paid = Math.round(paidByPerson[p] || 0);
+      var paidParts = [];
+      Object.keys(totalsByCurrency).forEach(function(cur) {
+        var paid = 0;
+        expenses.forEach(function(e) {
+          if (e.paid_by === p && (e.currency || 'ARS') === cur) {
+            paid += parseFloat(e.amount) || 0;
+          }
+        });
+        if (paid > 0) paidParts.push(fmtCurrency(paid, cur));
+      });
       html += '<div class="split-balance-chip">' +
         '<div class="split-balance-name">' + escHtml(p) + ' pago</div>' +
-        '<div class="split-balance-amount" style="color:var(--text)">' + fmt(paid) + '</div>' +
+        '<div class="split-balance-amount" style="color:var(--text)">' + (paidParts.length > 0 ? paidParts.join(' + ') : '$0') + '</div>' +
       '</div>';
     });
     html += '</div>';
 
-    // Liquidación: quién le debe a quién
-    if (settlements.length > 0) {
+    // Liquidación: quién le debe a quién (por moneda)
+    if (hasAnySettlement) {
       html += '<div class="split-section-label">Liquidacion final</div>';
       html += '<div class="split-settlement" style="margin:0 16px 12px">';
-      settlements.forEach(function(s) {
-        html += '<div style="padding:12px 0;border-bottom:1px solid var(--border);font-size:0.9rem">' +
-          '<div style="color:var(--muted);font-size:0.72rem;margin-bottom:4px">Segun los gastos registrados</div>' +
-          '<div><strong style="color:var(--red)">' + escHtml(s.from) + '</strong> le debe a ' +
-          '<strong style="color:var(--green)">' + escHtml(s.to) + '</strong></div>' +
-          '<div style="font-size:1.3rem;font-weight:700;color:var(--accent);margin-top:4px">' + fmt(s.amount) + '</div>' +
-        '</div>';
+      Object.keys(allSettlements).forEach(function(currency) {
+        allSettlements[currency].forEach(function(s) {
+          html += '<div style="padding:12px 0;border-bottom:1px solid var(--border);font-size:0.9rem">' +
+            '<div><strong style="color:var(--red)">' + escHtml(s.from) + '</strong> le debe a ' +
+            '<strong style="color:var(--green)">' + escHtml(s.to) + '</strong></div>' +
+            '<div style="font-size:1.3rem;font-weight:700;color:var(--accent);margin-top:4px">' + fmtCurrency(s.amount, currency) + '</div>' +
+          '</div>';
+        });
       });
       html += '</div>';
     } else {
@@ -4514,38 +4604,55 @@ function renderSplitDetail(groupId) {
           '<div class="split-expense-desc">' + escHtml(exp.description) + '</div>' +
           '<div class="split-expense-meta">Pago ' + escHtml(exp.paid_by) + ' &middot; ' + splitInfo + '</div>' +
         '</div>' +
-        '<div class="split-expense-amount">' + fmt(parseFloat(exp.amount) || 0) + '</div>' +
+        '<div class="split-expense-amount">' + fmtCurrency(parseFloat(exp.amount) || 0, exp.currency || 'ARS') + '</div>' +
       '</div>';
     });
     html += '</details>';
 
   } else {
     // ── GRUPO ACTIVO ──
-    // Balances
+    // Balances (multi-currency)
     html += '<div class="split-section-label">Estado de cuentas</div>';
     html += '<div class="split-balances">';
     participants.forEach(function(p) {
-      var val = balances[p] || 0;
-      var cls = val > 0.01 ? 'positive' : val < -0.01 ? 'negative' : 'zero';
-      var label = val > 0.01 ? 'recibe' : val < -0.01 ? 'debe' : 'a mano';
+      var balanceParts = [];
+      var hasPositive = false;
+      var hasNegative = false;
+      currencies.forEach(function(cur) {
+        var val = balancesByCurrency[cur][p] || 0;
+        if (val > 0.01) {
+          hasPositive = true;
+          balanceParts.push('<span class="positive">' + fmtCurrency(Math.abs(val), cur) + '</span>');
+        } else if (val < -0.01) {
+          hasNegative = true;
+          balanceParts.push('<span class="negative">' + fmtCurrency(Math.abs(val), cur) + '</span>');
+        }
+      });
+      var label = '';
+      if (hasPositive && !hasNegative) label = 'recibe';
+      else if (hasNegative && !hasPositive) label = 'debe';
+      else if (!hasPositive && !hasNegative) label = 'a mano';
+      else label = 'mixto';
       html += '<div class="split-balance-chip">' +
         '<div class="split-balance-name">' + escHtml(p) + ' <span style="opacity:0.6">' + label + '</span></div>' +
-        '<div class="split-balance-amount ' + cls + '">' + fmt(Math.abs(val)) + '</div>' +
+        '<div class="split-balance-amount">' + (balanceParts.length > 0 ? balanceParts.join(' <span style="opacity:0.3">|</span> ') : fmtCurrency(0, currencies[0] || 'ARS')) + '</div>' +
       '</div>';
     });
     html += '</div>';
 
-    // Settlements
-    if (settlements.length > 0) {
+    // Settlements (multi-currency)
+    if (hasAnySettlement) {
       html += '<div class="split-section-label">Resumen de deudas</div>';
       html += '<div class="split-settlement">';
-      settlements.forEach(function(s) {
-        html += '<div class="split-settlement-row">' +
-          '<span>' + escHtml(s.from) + '</span>' +
-          '<span class="split-settlement-arrow">&rarr;</span>' +
-          '<span>' + escHtml(s.to) + '</span>' +
-          '<span class="split-settlement-amount">' + fmt(s.amount) + '</span>' +
-        '</div>';
+      Object.keys(allSettlements).forEach(function(currency) {
+        allSettlements[currency].forEach(function(s) {
+          html += '<div class="split-settlement-row">' +
+            '<span>' + escHtml(s.from) + '</span>' +
+            '<span class="split-settlement-arrow">&rarr;</span>' +
+            '<span>' + escHtml(s.to) + '</span>' +
+            '<span class="split-settlement-amount">' + fmtCurrency(s.amount, currency) + '</span>' +
+          '</div>';
+        });
       });
       html += '</div>';
     }
@@ -4560,7 +4667,7 @@ function renderSplitDetail(groupId) {
       '</div>';
     }
 
-    // Expense list
+    // Expense list (clickable for editing)
     html += '<div class="split-section-label">Gastos (' + expenses.length + ')</div>';
     if (expenses.length === 0) {
       html += '<div class="split-empty"><div class="split-empty-text">Sin gastos todavia. Toca + para agregar.</div></div>';
@@ -4568,13 +4675,13 @@ function renderSplitDetail(groupId) {
       expenses.forEach(function(exp) {
         var initial = (exp.paid_by || '?')[0].toUpperCase();
         var splitInfo = formatSplitInfo(exp, participants);
-        html += '<div class="split-expense-item">' +
+        html += '<div class="split-expense-item" style="cursor:pointer" onclick="openSplitExpenseModal(\'' + exp.id + '\')">' +
           '<div class="split-expense-dot">' + initial + '</div>' +
           '<div class="split-expense-info">' +
             '<div class="split-expense-desc">' + escHtml(exp.description) + '</div>' +
             '<div class="split-expense-meta">Pago ' + escHtml(exp.paid_by) + ' &middot; ' + splitInfo + '</div>' +
           '</div>' +
-          '<div class="split-expense-amount">' + fmt(parseFloat(exp.amount) || 0) + '</div>' +
+          '<div class="split-expense-amount">' + fmtCurrency(parseFloat(exp.amount) || 0, exp.currency || 'ARS') + '</div>' +
           '<button class="split-expense-del" onclick="event.stopPropagation();deleteSplitExpenseRemote(\'' + exp.id + '\',\'' + groupId + '\')" title="Eliminar">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
           '</button>' +
@@ -4687,37 +4794,76 @@ async function saveSplitGroup() {
 }
 
 // ── Expense modal ──
-function openSplitExpenseModal() {
+function openSplitExpenseModal(editExpenseId) {
   if (!currentSplitGroupId) return;
   var group = splitGroups.find(function(g) { return g.id === currentSplitGroupId; });
   if (!group) return;
-  splitCurrentMode = 'equal';
+
+  editingSplitExpenseId = editExpenseId || null;
+  var isEditing = !!editingSplitExpenseId;
+  var exp = null;
+
+  if (isEditing) {
+    var exps = splitExpenses[currentSplitGroupId] || [];
+    exp = exps.find(function(e) { return e.id === editExpenseId; });
+    if (!exp) return;
+  }
+
+  // Modal title and button
+  document.getElementById('splitExpenseModalTitle').textContent = isEditing ? 'Editar gasto' : 'Agregar gasto';
+  document.querySelector('#splitExpenseModalOverlay .btn-submit').textContent = isEditing ? 'Actualizar gasto' : 'Guardar gasto';
+
+  // Currency
+  splitCurrentCurrency = (isEditing && exp) ? (exp.currency || 'ARS') : 'ARS';
+  document.querySelectorAll('#splitCurrencyToggle .type-btn').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-currency') === splitCurrentCurrency);
+  });
+
+  // Split mode
+  splitCurrentMode = (isEditing && exp) ? exp.split_mode : 'equal';
   splitCurrentUnit = 'percent';
 
-  document.getElementById('splitExpenseDesc').value = '';
-  document.getElementById('splitExpenseAmount').value = '';
+  // Fields
+  document.getElementById('splitExpenseDesc').value = isEditing ? exp.description : '';
+  document.getElementById('splitExpenseAmount').value = isEditing ? exp.amount : '';
 
   // Populate paid_by select
   var select = document.getElementById('splitExpensePaidBy');
   select.innerHTML = (group.participants || []).map(function(p) {
-    return '<option value="' + escHtml(p) + '">' + escHtml(p) + '</option>';
+    return '<option value="' + escHtml(p) + '"' +
+      (isEditing && exp.paid_by === p ? ' selected' : '') +
+      '>' + escHtml(p) + '</option>';
   }).join('');
 
   // Reset split mode toggle
   document.querySelectorAll('#splitExpenseModalOverlay .type-btn[data-split]').forEach(function(b) {
-    b.classList.toggle('active', b.getAttribute('data-split') === 'equal');
+    b.classList.toggle('active', b.getAttribute('data-split') === splitCurrentMode);
   });
   // Reset unit toggle
   document.querySelectorAll('#splitCustomSection .type-btn[data-splitunit]').forEach(function(b) {
     b.classList.toggle('active', b.getAttribute('data-splitunit') === 'percent');
   });
-  document.getElementById('splitCustomSection').style.display = 'none';
+  document.getElementById('splitCustomSection').style.display = splitCurrentMode === 'custom' ? 'block' : 'none';
   renderSplitCustomFields(group.participants);
+
+  // If editing with custom split, populate custom fields
+  if (isEditing && exp.split_mode === 'custom' && exp.split_detail) {
+    var detail = typeof exp.split_detail === 'string' ? JSON.parse(exp.split_detail) : exp.split_detail;
+    setSplitUnit('amount');
+    document.querySelectorAll('.split-custom-amount').forEach(function(input) {
+      var pName = input.getAttribute('data-participant');
+      if (detail[pName] !== undefined) {
+        input.value = detail[pName];
+      }
+    });
+    updateSplitCustomHint();
+  }
 
   document.getElementById('splitExpenseModalOverlay').classList.add('open');
 }
 
 function closeSplitExpenseModal() {
+  editingSplitExpenseId = null;
   document.getElementById('splitExpenseModalOverlay').classList.remove('open');
 }
 
@@ -4760,6 +4906,13 @@ function setSplitUnit(unit) {
   if (group) renderSplitCustomFields(group.participants);
 }
 
+function setSplitCurrency(code) {
+  splitCurrentCurrency = code;
+  document.querySelectorAll('#splitCurrencyToggle .type-btn').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-currency') === code);
+  });
+}
+
 function updateSplitCustomHint() {
   var hint = document.getElementById('splitCustomHint');
   if (!hint) return;
@@ -4780,10 +4933,10 @@ function updateSplitCustomHint() {
     var amount = parseFloat(document.getElementById('splitExpenseAmount').value) || 0;
     var diff = Math.abs(total - amount);
     if (amount > 0 && diff < 1) {
-      hint.textContent = 'Total: ' + fmt(total) + ' ✓';
+      hint.textContent = 'Total: ' + fmtCurrency(total, splitCurrentCurrency) + ' ✓';
       hint.className = 'split-custom-hint ok';
     } else if (amount > 0) {
-      hint.textContent = 'Total: ' + fmt(total) + ' (debe sumar ' + fmt(amount) + ')';
+      hint.textContent = 'Total: ' + fmtCurrency(total, splitCurrentCurrency) + ' (debe sumar ' + fmtCurrency(amount, splitCurrentCurrency) + ')';
       hint.className = 'split-custom-hint error';
     } else {
       hint.textContent = '';
@@ -4827,31 +4980,47 @@ async function saveSplitExpense() {
         total += val;
       });
       if (Math.abs(total - amount) > 1) {
-        showToast('La suma ($' + Math.round(total).toLocaleString('es-AR') + ') no coincide con el total ($' + Math.round(amount).toLocaleString('es-AR') + ')');
+        showToast('La suma (' + fmtCurrency(total, splitCurrentCurrency) + ') no coincide con el total (' + fmtCurrency(amount, splitCurrentCurrency) + ')');
         return;
       }
     }
   }
 
   var expense = {
-    group_id: currentSplitGroupId,
     description: desc,
     amount: amount,
     paid_by: paidBy,
     split_mode: splitCurrentMode,
-    split_detail: splitDetail
+    split_detail: splitDetail,
+    currency: splitCurrentCurrency
   };
 
-  var created = await insertSplitExpense(expense);
-  if (created) {
-    if (!splitExpenses[currentSplitGroupId]) splitExpenses[currentSplitGroupId] = [];
-    splitExpenses[currentSplitGroupId].push(created);
-    saveSplitLocal();
-    renderSplitDetail(currentSplitGroupId);
-    renderSplitScreen();
-    closeSplitExpenseModal();
-    showToast('Gasto agregado');
+  if (editingSplitExpenseId) {
+    var updated = await updateSplitExpense(editingSplitExpenseId, expense);
+    if (updated) {
+      var exps = splitExpenses[currentSplitGroupId] || [];
+      var idx = exps.findIndex(function(e) { return e.id === editingSplitExpenseId; });
+      if (idx >= 0) exps[idx] = updated;
+      saveSplitLocal();
+      renderSplitDetail(currentSplitGroupId);
+      renderSplitScreen();
+      closeSplitExpenseModal();
+      showToast('Gasto actualizado');
+    }
+  } else {
+    expense.group_id = currentSplitGroupId;
+    var created = await insertSplitExpense(expense);
+    if (created) {
+      if (!splitExpenses[currentSplitGroupId]) splitExpenses[currentSplitGroupId] = [];
+      splitExpenses[currentSplitGroupId].push(created);
+      saveSplitLocal();
+      renderSplitDetail(currentSplitGroupId);
+      renderSplitScreen();
+      closeSplitExpenseModal();
+      showToast('Gasto agregado');
+    }
   }
+  editingSplitExpenseId = null;
 }
 
 // ── Group actions ──
